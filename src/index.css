@@ -1,0 +1,25 @@
+@import "tailwindcss";
+
+@theme {
+  --color-royal: #6940A5;
+  --color-royal-dark: #4A2D74;
+  --color-royal-light: #F4F0F7;
+  --color-notion-blue: #337EA9;
+  --color-notion-blue-dark: #235A7A;
+  --color-notion-blue-light: #E7F3F8;
+  --color-notion-green: #448361;
+  --color-notion-green-dark: #326148;
+  --color-notion-green-light: #EDF3EC;
+  --color-gold: #D4AF37;
+  --color-gold-light: #F3E5AB;
+  --color-slate-custom: #475569;
+  
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+}
+
+body {
+  @apply font-sans;
+  background-color: #F8FAFC;
+  color: #0F172A;
+  -webkit-tap-highlight-color: transparent;
+}

@@ -1,0 +1,492 @@
+import React, { useState } from 'react';
+import { Transaction, Wallet } from '../../types';
+import { Modal } from '../../components/Modal';
+import { formatCurrency } from '../../lib/utils';
+import { PiggyBank, Wallet as WalletIcon, TrendingUp, Calendar, Target, ChevronRight, ArrowLeft, Plus, Edit2, Trash2, X, CheckCircle2 } from 'lucide-react';
+import { differenceInDays, addDays, format, parseISO } from 'date-fns';
+import { WalletsViewProps } from './types';
+import { motion, AnimatePresence } from 'motion/react';
+import { WalletModal } from './components/WalletModal';
+
+export function WalletsView({ 
+  transactions, 
+  recurringTransactions, 
+  wallets, 
+  currency, 
+  onAddWallet, 
+  onUpdateWallet, 
+  onDeleteWallet,
+  onAddRecurringTransaction,
+  onUpdateRecurringTransaction,
+  onDeleteRecurringTransaction
+}: WalletsViewProps) {
+  const [selectedWalletId, setSelectedWalletId] = useState<string | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingWallet, setEditingWallet] = useState<Wallet | null>(null);
+
+  // Form state
+  const [name, setName] = useState('');
+  const [balance, setBalance] = useState('');
+  const [monthlyIncome, setMonthlyIncome] = useState('');
+  const [type, setType] = useState<'normal' | 'savings'>('normal');
+  const [isDefault, setIsDefault] = useState(false);
+  const [savingsGoal, setSavingsGoal] = useState('');
+  const [savingsEndDate, setSavingsEndDate] = useState('');
+
+  // Sync form state when a wallet is selected for inline editing
+  React.useEffect(() => {
+    const selected = wallets.find(w => w.id === selectedWalletId);
+    if (selected) {
+      setName(selected.name);
+      setBalance(selected.balance.toString());
+      setMonthlyIncome(selected.monthlyIncome?.toString() || '');
+      setType(selected.type || 'normal');
+      setIsDefault(!!selected.isDefault);
+      setSavingsGoal(selected.savingsGoal?.toString() || '');
+      setSavingsEndDate(selected.savingsEndDate || '');
+    }
+  }, [selectedWalletId, wallets]);
+
+  const calculateWalletDailyRate = (walletId: string) => {
+    const walletTransactions = transactions.filter(t => t.walletId === walletId);
+    if (walletTransactions.length === 0) return 0;
+
+    const sortedDates = walletTransactions.map(t => parseISO(t.date).getTime()).sort((a, b) => a - b);
+    const firstDate = new Date(sortedDates[0]);
+    const today = new Date();
+    const daysTracked = Math.max(1, differenceInDays(today, firstDate));
+
+    const totalIncome = walletTransactions.filter(t => t.type === 'income').reduce((acc, t) => acc + t.amount, 0);
+    const totalExpense = walletTransactions.filter(t => t.type === 'expense').reduce((acc, t) => acc + t.amount, 0);
+    const netSaved = totalIncome - totalExpense;
+
+    return Math.max(0, netSaved / daysTracked);
+  };
+
+  const handleOpenAdd = () => {
+    setEditingWallet(null);
+    setName('');
+    setBalance('');
+    setMonthlyIncome('');
+    setType('normal');
+    setIsDefault(wallets.length === 0);
+    setSavingsGoal('');
+    setSavingsEndDate('');
+    setIsModalOpen(true);
+  };
+
+  const handleOpenEdit = (w: Wallet, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedWalletId(w.id);
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim() || (balance !== '' && isNaN(Number(balance)))) return;
+
+    const walletData: Wallet = {
+      id: editingWallet?.id || selectedWalletId || crypto.randomUUID(),
+      name: name.trim(),
+      balance: balance === '' ? 0 : Number(balance),
+      monthlyIncome: type === 'normal' && monthlyIncome && !isNaN(Number(monthlyIncome)) ? Number(monthlyIncome) : undefined,
+      type,
+      isDefault: type === 'normal' ? isDefault : false,
+      savingsGoal: type === 'savings' && savingsGoal && !isNaN(Number(savingsGoal)) ? Number(savingsGoal) : undefined,
+      savingsEndDate: type === 'savings' && savingsEndDate ? savingsEndDate : undefined,
+    };
+
+    if (editingWallet || selectedWalletId) {
+      onUpdateWallet(walletData);
+    } else {
+      onAddWallet(walletData);
+    }
+    setIsModalOpen(false);
+  };
+
+  const handleDelete = (id: string) => {
+    if (window.confirm("Are you sure you want to delete this wallet?")) {
+      const existingSalary = recurringTransactions.find(r => r.walletId === id && r.description === 'Salary' && r.type === 'income');
+      if (existingSalary) {
+        onDeleteRecurringTransaction(existingSalary.id);
+      }
+      onDeleteWallet(id);
+      setIsModalOpen(false);
+      if (selectedWalletId === id) setSelectedWalletId(null);
+    }
+  };
+
+  const selectedWallet = wallets.find(w => w.id === selectedWalletId);
+  const sortedWallets = [...wallets].sort((a, b) => {
+    if (a.isDefault) return -1;
+    if (b.isDefault) return 1;
+    return 0;
+  });
+
+  if (selectedWallet) {
+    const isSavings = selectedWallet.type === 'savings';
+    const dailyRate = calculateWalletDailyRate(selectedWallet.id);
+    const target = Number(savingsGoal) || 0;
+    const amountNeeded = Math.max(0, target - selectedWallet.balance);
+    
+    let daysRequired = 0;
+    let estimatedDate = null;
+    if (target > 0 && amountNeeded > 0 && dailyRate > 0) {
+      daysRequired = Math.ceil(amountNeeded / dailyRate);
+      estimatedDate = addDays(new Date(), daysRequired);
+    }
+
+    const isDefaultWallet = selectedWallet.isDefault;
+    const monthlyIncomeValue = selectedWallet.monthlyIncome || 0;
+    const fixedCosts = recurringTransactions
+      .filter(r => r.isActive && r.isFixedCost && r.type === 'expense' && r.walletId === selectedWallet.id)
+      .reduce((acc, r) => {
+        // Normalize to monthly
+        const monthlyAmount = r.recurrence === 'weekly' ? r.amount * 4.33 : r.amount;
+        return acc + monthlyAmount;
+      }, 0);
+    const netMonthlyIncome = monthlyIncomeValue - fixedCosts;
+    const netWeeklyBudget = netMonthlyIncome / 4.33;
+
+    return (
+      <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+        <div className="flex items-center justify-between">
+          <button 
+            onClick={() => setSelectedWalletId(null)} 
+            className="flex items-center text-slate-500 hover:text-royal transition-colors"
+          >
+            <ArrowLeft className="w-5 h-5 mr-1" /> Back to Wallets
+          </button>
+          <button 
+            onClick={() => handleDelete(selectedWallet.id)}
+            className="text-rose-400 hover:text-rose-600 p-2 rounded-full hover:bg-rose-50 transition-colors flex items-center text-xs font-bold uppercase tracking-widest"
+          >
+            <Trash2 className="w-4 h-4 mr-1" /> Delete Wallet
+          </button>
+        </div>
+
+        <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 space-y-6">
+          <div className="flex rounded-xl overflow-hidden border border-slate-200 p-1 bg-slate-50">
+            <button
+              type="button"
+              onClick={() => setType('normal')}
+              className={`flex-1 py-2.5 text-sm font-bold rounded-lg transition-all ${type === 'normal' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+            >
+              Normal
+            </button>
+            <button
+              type="button"
+              onClick={() => setType('savings')}
+              className={`flex-1 py-2.5 text-sm font-bold rounded-lg transition-all ${type === 'savings' ? 'bg-white text-notion-green shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+            >
+              Savings
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Wallet Name</label>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-royal/50 focus:bg-white transition-all font-medium"
+              />
+            </div>
+
+            <div>
+              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Current Balance</label>
+              <div className="relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xl font-medium">{currency === 'USD' ? '$' : currency}</span>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={balance}
+                  onChange={(e) => setBalance(e.target.value)}
+                  className="w-full pl-10 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-2xl font-bold focus:outline-none focus:ring-2 focus:ring-royal/50 focus:bg-white transition-all"
+                />
+              </div>
+            </div>
+
+            {type === 'normal' && (
+              <div>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Monthly Income</label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xl font-medium">{currency === 'USD' ? '$' : currency}</span>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={monthlyIncome}
+                    onChange={(e) => setMonthlyIncome(e.target.value)}
+                    className="w-full pl-10 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-2xl font-bold focus:outline-none focus:ring-2 focus:ring-royal/50 focus:bg-white transition-all"
+                  />
+                </div>
+              </div>
+            )}
+
+            {type === 'savings' && (
+              <>
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Savings Goal (Optional)</label>
+                  <div className="relative">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xl font-medium">{currency === 'USD' ? '$' : currency}</span>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={savingsGoal}
+                      onChange={(e) => setSavingsGoal(e.target.value)}
+                      className="w-full pl-10 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-2xl font-bold focus:outline-none focus:ring-2 focus:ring-royal/50 focus:bg-white transition-all"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Target Date (Optional)</label>
+                  <input
+                    type="date"
+                    value={savingsEndDate}
+                    onChange={(e) => setSavingsEndDate(e.target.value)}
+                    className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-royal/50 focus:bg-white transition-all font-medium"
+                  />
+                </div>
+              </>
+            )}
+
+            {type === 'normal' && (
+              <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-200 self-end h-[74px]">
+                <input
+                  type="checkbox"
+                  id="isDefaultInline"
+                  checked={isDefault}
+                  onChange={(e) => setIsDefault(e.target.checked)}
+                  className="w-5 h-5 rounded border-slate-300 text-royal focus:ring-royal"
+                />
+                <label htmlFor="isDefaultInline" className="text-sm font-bold text-slate-700 cursor-pointer">
+                  Set as Default Wallet
+                </label>
+              </div>
+            )}
+          </div>
+
+          <div className="pt-4 flex gap-3">
+            <button
+              onClick={handleSubmit}
+              disabled={!name.trim() || (balance !== '' && isNaN(Number(balance)))}
+              className="flex-1 py-4 bg-royal text-white rounded-2xl font-bold shadow-lg shadow-royal/20 hover:bg-royal-dark transition-all active:scale-[0.98] disabled:opacity-50"
+            >
+              Save Changes
+            </button>
+          </div>
+        </div>
+
+        {isDefaultWallet && type === 'normal' && (
+          <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 space-y-6">
+            <h3 className="text-sm font-bold text-slate-800 uppercase tracking-widest flex items-center">
+              <Target className="w-4 h-4 mr-2 text-royal" /> Budget Overview
+            </h3>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100">
+                <div className="flex items-center text-slate-500 mb-2">
+                  <span className="text-xs font-bold uppercase tracking-widest">Gross Monthly</span>
+                </div>
+                <p className="text-2xl font-mono font-bold text-slate-800">{formatCurrency(monthlyIncomeValue, currency)}</p>
+              </div>
+              <div className="bg-rose-50 p-5 rounded-2xl border border-rose-100">
+                <div className="flex items-center text-rose-500 mb-2">
+                  <span className="text-xs font-bold uppercase tracking-widest">Fixed Costs</span>
+                </div>
+                <p className="text-2xl font-mono font-bold text-rose-600">-{formatCurrency(fixedCosts, currency)}</p>
+              </div>
+              <div className="bg-emerald-50 p-5 rounded-2xl border border-emerald-100">
+                <div className="flex items-center text-emerald-600 mb-2">
+                  <span className="text-xs font-bold uppercase tracking-widest">Net Monthly</span>
+                </div>
+                <p className="text-2xl font-mono font-bold text-emerald-700">{formatCurrency(netMonthlyIncome, currency)}</p>
+              </div>
+              <div className="bg-royal/5 p-5 rounded-2xl border border-royal/10">
+                <div className="flex items-center text-royal mb-2">
+                  <span className="text-xs font-bold uppercase tracking-widest">Weekly Budget</span>
+                </div>
+                <p className="text-2xl font-mono font-bold text-royal-dark">{formatCurrency(netWeeklyBudget, currency)}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {isSavings && target > 0 && (
+          <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 space-y-6">
+            <h3 className="text-sm font-bold text-slate-800 uppercase tracking-widest flex items-center">
+              <Target className="w-4 h-4 mr-2 text-emerald-500" /> Savings Projections
+            </h3>
+
+            <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+              {amountNeeded === 0 ? (
+                <div className="bg-emerald-50 text-emerald-700 p-6 rounded-2xl flex items-center border border-emerald-100">
+                  <span className="text-3xl mr-4">🎉</span>
+                  <div>
+                    <p className="font-bold">Goal Reached!</p>
+                    <p className="text-sm opacity-90">You have successfully saved enough in this wallet.</p>
+                  </div>
+                </div>
+              ) : dailyRate <= 0 ? (
+                <div className="bg-amber-50 text-amber-700 p-6 rounded-2xl text-sm border border-amber-100">
+                  <p className="font-medium">No positive savings rate detected.</p>
+                  <p className="opacity-90 mt-1">Add more income transactions to this wallet to see a projection of when you'll reach your goal.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="bg-emerald-50/50 p-5 rounded-2xl border border-emerald-100">
+                    <div className="flex items-center text-emerald-600 mb-2">
+                      <TrendingUp className="w-4 h-4 mr-2" />
+                      <span className="text-xs font-bold uppercase tracking-widest">Daily Savings Rate</span>
+                    </div>
+                    <p className="text-2xl font-mono font-bold text-emerald-700">+{formatCurrency(dailyRate, currency)}</p>
+                  </div>
+                  <div className="bg-royal/5 p-5 rounded-2xl border border-royal/10">
+                    <div className="flex items-center text-royal mb-2">
+                      <Calendar className="w-4 h-4 mr-2" />
+                      <span className="text-xs font-bold uppercase tracking-widest">Estimated Goal Date</span>
+                    </div>
+                    <p className="text-2xl font-bold text-royal-dark">
+                      {estimatedDate ? format(estimatedDate, 'MMM d, yyyy') : '---'}
+                    </p>
+                    <p className="text-xs text-slate-500 mt-1 font-medium">{daysRequired} days remaining</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6 pb-20">
+      <div className="bg-royal text-white p-6 rounded-3xl shadow-lg relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-10 -mt-10 blur-2xl"></div>
+        <h2 className="text-xl font-bold mb-1 relative z-10">My Wallets</h2>
+        <p className="text-royal-light text-sm relative z-10">Manage your accounts and track savings goals.</p>
+        <div className="mt-6 pt-6 border-t border-white/10 relative z-10 grid grid-cols-2 gap-4">
+          <div>
+            <p className="text-[10px] uppercase tracking-widest font-bold text-royal-light mb-1">Balance</p>
+            <p className="text-2xl font-light">
+              {formatCurrency((wallets || []).filter(w => w.type !== 'savings').reduce((acc, w) => acc + w.balance, 0), currency)}
+            </p>
+          </div>
+          <div>
+            <p className="text-[10px] uppercase tracking-widest font-bold text-royal-light mb-1">Total Savings</p>
+            <p className="text-2xl font-light">
+              {formatCurrency((wallets || []).filter(w => w.type === 'savings').reduce((acc, w) => acc + w.balance, 0), currency)}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        {sortedWallets.map(wallet => {
+          const isSavings = wallet.type === 'savings';
+          return (
+            <div 
+              key={wallet.id} 
+              onClick={() => setSelectedWalletId(wallet.id)}
+              className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 hover:border-royal/30 transition-all cursor-pointer active:scale-[0.98]"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center mr-4 ${isSavings ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-600'}`}>
+                    {isSavings ? <PiggyBank className="w-6 h-6" /> : <WalletIcon className="w-6 h-6" />}
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-bold text-slate-800">{wallet.name}</h3>
+                      {wallet.isDefault && (
+                        <span className="bg-royal/10 text-royal text-[8px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider">Default</span>
+                      )}
+                    </div>
+                    <p className="text-[10px] text-slate-400 uppercase font-bold tracking-widest">
+                      {isSavings ? 'Savings Account' : 'Normal Account'}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <div className="text-right">
+                    <p className="font-mono font-bold text-slate-800">{formatCurrency(wallet.balance, currency)}</p>
+                  </div>
+                  <ChevronRight className="w-5 h-5 text-slate-300" />
+                </div>
+              </div>
+              
+              {isSavings && wallet.savingsGoal ? (
+                <div className="mt-4 pt-4 border-t border-slate-50">
+                  <div className="flex justify-between items-end mb-1.5">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                      Goal Progress
+                    </p>
+                    <p className="text-xs font-bold text-notion-green">
+                      {Math.round(Math.min(100, (wallet.balance / wallet.savingsGoal) * 100))}%
+                    </p>
+                  </div>
+                  <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-notion-green transition-all duration-500"
+                      style={{ width: `${Math.min(100, (wallet.balance / wallet.savingsGoal) * 100)}%` }}
+                    ></div>
+                  </div>
+                  <div className="flex justify-between mt-2">
+                    <p className="text-[10px] text-slate-400 font-medium">
+                      Target: {formatCurrency(wallet.savingsGoal, currency)}
+                    </p>
+                    {wallet.savingsEndDate && (
+                      <p className="text-[10px] text-slate-400 font-medium">
+                        By {format(parseISO(wallet.savingsEndDate), 'MMM d, yyyy')}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          );
+        })}
+      </div>
+
+      <button
+        onClick={handleOpenAdd}
+        className="fixed bottom-24 right-6 w-14 h-14 bg-royal text-white rounded-full shadow-lg shadow-royal/30 flex items-center justify-center hover:bg-royal-dark transition-transform active:scale-95 z-30"
+      >
+        <Plus className="w-6 h-6" />
+      </button>
+
+      <AnimatePresence>
+        {isModalOpen && (
+          <WalletModal
+            isOpen={isModalOpen}
+            onClose={() => {
+              setIsModalOpen(false);
+              setEditingWallet(null);
+            }}
+            onAddWallet={(w) => {
+              onAddWallet(w);
+            }}
+            onUpdateWallet={(w) => {
+              onUpdateWallet(w);
+            }}
+            onDeleteWallet={(id) => {
+              const existingSalary = recurringTransactions.find(r => r.walletId === id && r.description === 'Salary' && r.type === 'income');
+              if (existingSalary) {
+                onDeleteRecurringTransaction(existingSalary.id);
+              }
+              onDeleteWallet(id);
+            }}
+            onAddRecurringTransaction={onAddRecurringTransaction}
+            onUpdateRecurringTransaction={onUpdateRecurringTransaction}
+            onDeleteRecurringTransaction={onDeleteRecurringTransaction}
+            editingWallet={editingWallet}
+            currency={currency}
+            isFirstWallet={wallets.length === 0}
+            recurringTransactions={recurringTransactions}
+          />
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
