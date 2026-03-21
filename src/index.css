@@ -18,8 +18,8 @@
 }
 
 body {
-  @apply font-sans;
-  background-color: #F8FAFC;
-  color: #0F172A;
-  -webkit-tap-highlight-color: transparent;
+	@apply font-sans;
+	background-color: #f8fafc;
+	color: #0f172a;
+	-webkit-tap-highlight-color: transparent;
 }
