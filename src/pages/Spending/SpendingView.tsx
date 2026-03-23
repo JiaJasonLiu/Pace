@@ -1,15 +1,10 @@
 import {
-	addMonths,
 	addWeeks,
-	endOfWeek,
 	format,
-	isAfter,
 	isBefore,
 	isSameDay,
-	isSameWeek,
 	parseISO,
 	startOfDay,
-	startOfWeek,
 	subWeeks,
 } from "date-fns";
 import * as Icons from "lucide-react";
@@ -29,6 +24,7 @@ import { TransactionModal } from "../../components/TransactionModal";
 import { formatCurrency } from "../../lib/utils";
 import type { RecurrenceType, Transaction, TransactionType } from "../../types";
 import type { SpendingViewProps } from "./types";
+import { useSpendingData } from "./hooks/useSpendingData";
 
 export function SpendingView({
 	transactions,
@@ -44,18 +40,22 @@ export function SpendingView({
 	onDeleteRecurringTransaction,
 	onSkipRecurringDate,
 }: SpendingViewProps) {
-	const _expenseCategories = (categories || []).filter(
-		(c) => c.type === "expense",
-	);
-	const _incomeCategories = (categories || []).filter(
-		(c) => c.type === "income",
-	);
-
 	const [currentDate, setCurrentDate] = useState(new Date());
 	const [direction, setDirection] = useState(0);
 	const [isModalOpen, setIsModalOpen] = useState(false);
 	const [editingTransaction, setEditingTransaction] =
 		useState<Transaction | null>(null);
+
+	const {
+		allDisplayTransactions,
+		weeklyIncome,
+		weeklyExpense,
+		weeklyBalance,
+		weekStart,
+		weekEnd,
+	} = useSpendingData(transactions, recurringTransactions, currentDate);
+
+	const weekRange = `${format(weekStart, "MMM d")} - ${format(weekEnd, "MMM d")}`;
 
 	const handlePrevWeek = () => {
 		setDirection(-1);
@@ -65,123 +65,6 @@ export function SpendingView({
 	const handleNextWeek = () => {
 		setDirection(1);
 		setCurrentDate((prev) => addWeeks(prev, 1));
-	};
-
-	const swipeHandlers = useSwipeable({
-		onSwipedLeft: (e) => {
-			const target = e.event.target as HTMLElement;
-			if (target.closest(".swipe-card-container")) return;
-			handleNextWeek();
-		},
-		onSwipedRight: (e) => {
-			const target = e.event.target as HTMLElement;
-			if (target.closest(".swipe-card-container")) return;
-			handlePrevWeek();
-		},
-		trackMouse: false,
-	});
-
-	// Weekly calculations
-	const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
-	const weekEnd = endOfWeek(currentDate, { weekStartsOn: 1 });
-	const weekRange = `${format(weekStart, "MMM d")} - ${format(weekEnd, "MMM d")}`;
-
-	const thisWeekTransactions = transactions.filter((t) =>
-		isSameWeek(parseISO(t.date), currentDate, { weekStartsOn: 1 }),
-	);
-
-	// Calculate scheduled transactions for the week
-	const scheduledTransactions: Transaction[] = [];
-	recurringTransactions.forEach((r) => {
-		if (!r.isActive) return;
-
-		const start = parseISO(r.startDate);
-		const now = startOfDay(new Date());
-		const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
-		const weekEnd = endOfWeek(currentDate, { weekStartsOn: 1 });
-
-		let checkDate = start;
-		// Find the absolute next occurrence from today that hasn't been posted yet
-		let foundNext = false;
-		let iterations = 0;
-		while (!foundNext && iterations < 100) {
-			// Safety break
-			iterations++;
-			if (isBefore(checkDate, now)) {
-				checkDate =
-					r.recurrence === "weekly"
-						? addWeeks(checkDate, 1)
-						: addMonths(checkDate, 1);
-				continue;
-			}
-
-			// Check if this specific occurrence was already posted or skipped
-			const isAlreadyPosted = transactions.some(
-				(t) => t.recurringId === r.id && isSameDay(parseISO(t.date), checkDate),
-			);
-			const isSkipped = r.skippedDates?.some((d) =>
-				isSameDay(parseISO(d), checkDate),
-			);
-
-			if (isAlreadyPosted || isSkipped) {
-				checkDate =
-					r.recurrence === "weekly"
-						? addWeeks(checkDate, 1)
-						: addMonths(checkDate, 1);
-				continue;
-			}
-
-			foundNext = true;
-		}
-
-		// Only show this single next occurrence if it falls within the current week view
-		if (
-			foundNext &&
-			(isSameDay(checkDate, weekStart) || isAfter(checkDate, weekStart)) &&
-			(isSameDay(checkDate, weekEnd) || isBefore(checkDate, weekEnd))
-		) {
-			scheduledTransactions.push({
-				id: `scheduled-${r.id}-${checkDate.getTime()}`,
-				amount: r.amount,
-				type: r.type,
-				category: r.category,
-				description: r.description,
-				date: checkDate.toISOString(),
-				walletId: r.walletId,
-				recurringId: r.id,
-				status: "scheduled",
-				isFixedCost: r.isFixedCost,
-			});
-		}
-	});
-
-	const allDisplayTransactions = [
-		...thisWeekTransactions,
-		...scheduledTransactions,
-	]
-		.filter(
-			(t) =>
-				!(
-					t.status === "scheduled" &&
-					isBefore(parseISO(t.date), startOfDay(new Date()))
-				),
-		)
-		.sort((a, b) => parseISO(b.date).getTime() - parseISO(a.date).getTime());
-
-	const postedTransactions = thisWeekTransactions.filter(
-		(t) => !t.status || t.status === "posted",
-	);
-	const weeklyIncome = postedTransactions
-		.filter((t) => t.type === "income")
-		.reduce((acc, t) => acc + t.amount, 0);
-	const weeklyExpense = postedTransactions
-		.filter((t) => t.type === "expense" && !t.isFixedCost)
-		.reduce((acc, t) => acc + t.amount, 0);
-	const weeklyBalance = weeklyIncome - weeklyExpense;
-
-	const handleOpenAdd = () => {
-		setEditingTransaction(null);
-		setIsModalOpen(true);
 	};
 
 	const handleOpenEdit = (t: Transaction) => {
