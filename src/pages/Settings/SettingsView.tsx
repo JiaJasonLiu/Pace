@@ -6,11 +6,11 @@ import {
 	Settings,
 	User,
 } from "lucide-react";
-import { useState } from "react";
 import { AccountSettings } from "./components/AccountSettings";
 import { CategoriesSettings } from "./components/CategoriesSettings";
 import { DataSettings } from "./components/DataSettings";
 import { RecurringSettings } from "./components/RecurringSettings";
+import { useSettingsNavigation } from "./hooks/useSettingsNavigation";
 import type { SettingsViewProps } from "./types";
 
 export function SettingsView({
@@ -24,15 +24,13 @@ export function SettingsView({
 	onImport,
 	onClear,
 }: SettingsViewProps) {
-	const [activePage, setActivePage] = useState<
-		"main" | "categories" | "account" | "data" | "recurring"
-	>("main");
+	const { activePage, navigateTo } = useSettingsNavigation();
 
 	if (activePage === "categories") {
 		return (
 			<div className="space-y-4">
 				<button
-					onClick={() => setActivePage("main")}
+					onClick={() => navigateTo("main")}
 					className="flex items-center text-slate-500 hover:text-slate-800 transition-colors mb-4"
 				>
 					<ArrowLeft className="w-5 h-5 mr-1" /> Back to Settings
@@ -51,7 +49,7 @@ export function SettingsView({
 		return (
 			<div className="space-y-4">
 				<button
-					onClick={() => setActivePage("main")}
+					onClick={() => navigateTo("main")}
 					className="flex items-center text-slate-500 hover:text-slate-800 transition-colors mb-4"
 				>
 					<ArrowLeft className="w-5 h-5 mr-1" /> Back to Settings
@@ -69,7 +67,7 @@ export function SettingsView({
 		return (
 			<div className="space-y-4">
 				<button
-					onClick={() => setActivePage("main")}
+					onClick={() => navigateTo("main")}
 					className="flex items-center text-slate-500 hover:text-slate-800 transition-colors mb-4"
 				>
 					<ArrowLeft className="w-5 h-5 mr-1" /> Back to Settings
@@ -83,7 +81,7 @@ export function SettingsView({
 		return (
 			<div className="space-y-4">
 				<button
-					onClick={() => setActivePage("main")}
+					onClick={() => navigateTo("main")}
 					className="flex items-center text-slate-500 hover:text-slate-800 transition-colors mb-4"
 				>
 					<ArrowLeft className="w-5 h-5 mr-1" /> Back to Settings
@@ -111,7 +109,7 @@ export function SettingsView({
 
 			<div className="space-y-4">
 				<button
-					onClick={() => setActivePage("account")}
+					onClick={() => navigateTo("account")}
 					className="w-full bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between hover:bg-slate-50 transition-colors"
 				>
 					<div className="flex items-center">
@@ -129,7 +127,7 @@ export function SettingsView({
 				</button>
 
 				<button
-					onClick={() => setActivePage("categories")}
+					onClick={() => navigateTo("categories")}
 					className="w-full bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between hover:bg-slate-50 transition-colors"
 				>
 					<div className="flex items-center">
@@ -147,7 +145,7 @@ export function SettingsView({
 				</button>
 
 				<button
-					onClick={() => setActivePage("recurring")}
+					onClick={() => navigateTo("recurring")}
 					className="w-full bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between hover:bg-slate-50 transition-colors"
 				>
 					<div className="flex items-center">
@@ -167,7 +165,7 @@ export function SettingsView({
 				</button>
 
 				<button
-					onClick={() => setActivePage("data")}
+					onClick={() => navigateTo("data")}
 					className="w-full bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between hover:bg-slate-50 transition-colors"
 				>
 					<div className="flex items-center">
