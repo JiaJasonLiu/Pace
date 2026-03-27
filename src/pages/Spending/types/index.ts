@@ -13,7 +13,7 @@ export interface SpendingViewProps {
 	onAddTransaction: (t: Transaction) => void;
 	onUpdateTransaction: (t: Transaction) => void;
 	onDeleteTransaction: (id: string) => void;
-	onAddRecurringTransaction: (r: RecurringTransaction) => string;
+	onAddRecurringTransaction: (r: RecurringTransaction) => void;
 	onUpdateRecurringTransaction: (r: RecurringTransaction) => void;
 	onDeleteRecurringTransaction: (id: string) => void;
 	onSkipRecurringDate: (recurringId: string, date: string) => void;
