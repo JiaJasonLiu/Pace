@@ -303,7 +303,11 @@ export function SpendingView({
 	return (
 		<div
 			className="relative min-h-full pb-20 overflow-hidden"
-			{...swipeHandlers}
+			{...useSwipeable({
+				onSwipedLeft: handleNextWeek,
+				onSwipedRight: handlePrevWeek,
+				trackMouse: true,
+			})}
 		>
 			<div className="flex items-center justify-between mb-4 bg-white p-2 rounded-2xl shadow-sm border border-slate-100">
 				<button
@@ -508,7 +512,7 @@ export function SpendingView({
 
 			{/* Floating Action Button */}
 			<button
-				onClick={handleOpenAdd}
+				onClick={() => setIsModalOpen(true)}
 				className="fixed bottom-24 right-6 w-14 h-14 bg-royal text-white rounded-full shadow-lg shadow-royal/30 flex items-center justify-center hover:bg-royal-dark transition-transform active:scale-95 z-30"
 				aria-label="Add Transaction"
 			>
