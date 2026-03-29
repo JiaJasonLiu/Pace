@@ -13,7 +13,7 @@ interface UseLifestyleDataProps {
     wallets: Wallet[];
     transactions: Transaction[];
     categories: Category[];
-    lifestyleSettings: LifestyleSettings | null;
+    lifestyleSettings?: LifestyleSettings;
     currentDate: Date;
 }
 

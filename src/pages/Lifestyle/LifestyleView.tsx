@@ -25,9 +25,6 @@ import { LifestyleSettingsModal } from "./components/LifestyleSettingsModal";
 import { LogTransactionModal } from "./components/LogTransactionModal";
 import { MotivationalEarningSection } from "./components/MotivationalEarningSection";
 import type { LifestyleViewProps } from "./types";
-import { LifestyleGoal } from "../../types";
-import React from "react";
-import { format } from "date-fns";
 
 export function LifestyleView({
     goals,

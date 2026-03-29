@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { LifestyleGoal } from "../../../types";
+import { type LifestyleGoal } from "../../../types";
 
 export function useLifestyleModals() {
     const [isAdding, setIsAdding] = useState(false);

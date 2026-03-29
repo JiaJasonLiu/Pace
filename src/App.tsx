@@ -1,14 +1,32 @@
-import { useState } from "react";
+import { useEffect, useState } from 'react'
 import { Layout } from "./components/Layout";
 import { useStore } from "./hooks/useStore";
 import { LifestyleView } from "./pages/Lifestyle/LifestyleView";
 import { SettingsView } from "./pages/Settings/SettingsView";
 import { SpendingView } from "./pages/Spending/SpendingView";
 import { WalletsView } from "./pages/Wallets/WalletsView";
+import { initDatabase } from './lib/db';
 
 export default function App() {
 	const [activeTab, setActiveTab] = useState("home");
 	const store = useStore();
+
+	const [isDbReady, setIsDbReady] = useState(false);
+  	const [error, setError] = useState<string | null>(null);
+
+	useEffect(() => {
+		const initializeDatabase = async () => {
+			try {
+				// Logic for database creation
+				const db = await initDatabase()
+
+				console.log("Data fetched:", db);
+			} catch (error) {
+				console.error("Initialization failed:", error);
+			}
+		};
+		initializeDatabase();
+	}, []);
 
 	const renderContent = () => {
 		switch (activeTab) {

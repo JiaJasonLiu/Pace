@@ -7,10 +7,32 @@ import { VitePWA } from "vite-plugin-pwa";
 export default defineConfig(({ mode }) => {
 	const env = loadEnv(mode, ".", "");
 	return {
+		// bundle target should be ES2023 or later to support modern JavaScript features and APIs
+		preview: {
+			headers: {
+				"Cross-Origin-Opener-Policy": "same-origin",
+				"Cross-Origin-Embedder-Policy": "require-corp",
+			},
+		},
+		build: {
+			target: 'esnext' // or 'es2022'
+		},
+		optimizeDeps: {
+			esbuildOptions: {
+			target: 'esnext'
+			}
+		},
 		plugins: [
 			react(),
 			tailwindcss(),
 			VitePWA({
+				workbox: {
+					// Raise the limit to 10 MiB (10 * 1024 * 1024 bytes)
+					maximumFileSizeToCacheInBytes: 10 * 1024 * 1024,
+					
+					// Ensure .wasm files are included in the glob patterns
+					globPatterns: ['**/*.{js,css,html,ico,png,svg,wasm}'],
+				},
 				registerType: "autoUpdate",
 				manifest: {
 					name: "Royal Budget",
@@ -44,6 +66,10 @@ export default defineConfig(({ mode }) => {
 		},
 		server: {
 			hmr: process.env.DISABLE_HMR !== "true",
+			headers: {
+				'Cross-Origin-Embedder-Policy': 'require-corp',
+				'Cross-Origin-Opener-Policy': 'same-origin',
+			},
 		},
 	};
 });

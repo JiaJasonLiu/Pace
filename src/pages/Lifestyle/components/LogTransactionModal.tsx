@@ -167,8 +167,8 @@ export function LogTransactionModal({
 								)
 								.map((cat) => (
 									<option key={cat.id} value={cat.name}>
-										(
-										{cat.lifestyleType.charAt(0).toUpperCase() +
+										( 
+										{cat.lifestyleType && cat.lifestyleType?.charAt(0).toUpperCase() +
 											cat.lifestyleType.slice(1)}
 										) {cat.name}
 									</option>
