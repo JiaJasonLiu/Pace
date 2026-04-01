@@ -1,7 +1,5 @@
 import type { Category } from "../types";
 
-export const STORAGE_KEY = "royal_budget_data";
-
 export const defaultCategories: Category[] = [
 	{
 		id: "1",

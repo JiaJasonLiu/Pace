@@ -1,4 +1,3 @@
-import { STORAGE_KEY } from "../constants";
 import { defaultAppState } from "../state/defaultAppState";
 import type { AppState } from "../types";
 import { db, type AppSettingsRow } from "./database";
@@ -102,31 +101,4 @@ export async function persistAppState(state: AppState): Promise<void> {
 			await db.appSettings.put(settings);
 		},
 	);
-}
-
-/** One-time migration from legacy localStorage blob. */
-export async function migrateLocalStorageToDexieIfNeeded(): Promise<void> {
-	const raw = localStorage.getItem(STORAGE_KEY);
-	if (!raw) return;
-
-	const [settings, txCount, walletCount] = await Promise.all([
-		db.appSettings.get(SETTINGS_ID),
-		db.transactions.count(),
-		db.wallets.count(),
-	]);
-
-	const dbHasData = Boolean(settings) || txCount > 0 || walletCount > 0;
-	if (dbHasData) {
-		localStorage.removeItem(STORAGE_KEY);
-		return;
-	}
-
-	try {
-		const parsed = JSON.parse(raw) as Partial<AppState>;
-		const state = mergeAppStatePartial(parsed);
-		await persistAppState(state);
-		localStorage.removeItem(STORAGE_KEY);
-	} catch (e) {
-		console.error("Failed to migrate localStorage to IndexedDB", e);
-	}
 }
