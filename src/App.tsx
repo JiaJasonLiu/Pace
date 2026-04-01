@@ -10,6 +10,14 @@ export default function App() {
 	const [activeTab, setActiveTab] = useState("home");
 	const store = useStore();
 
+	if (!store.isReady) {
+		return (
+			<div className="min-h-dvh flex items-center justify-center bg-slate-50 text-slate-600">
+				<p className="text-sm">Loading your budget…</p>
+			</div>
+		);
+	}
+
 	const renderContent = () => {
 		switch (activeTab) {
 			case "home":

@@ -1,7 +1,13 @@
 import { startOfDay, startOfWeek } from "date-fns";
-import { useEffect, useState } from "react";
-import { defaultCategories, STORAGE_KEY } from "../constants";
-import { DEFAULT_PERCENTAGES, processRecurring } from "../lib/finance";
+import { useEffect, useRef, useState } from "react";
+import { defaultCategories } from "../constants";
+import {
+	loadAppState,
+	migrateLocalStorageToDexieIfNeeded,
+	persistAppState,
+} from "../db/persistence";
+import { processRecurring } from "../lib/finance";
+import { defaultAppState } from "../state/defaultAppState";
 import type {
 	AppState,
 	Category,
@@ -13,44 +19,58 @@ import type {
 	Wallet,
 } from "../types";
 
-const defaultState: AppState = {
-	transactions: [],
-	recurringTransactions: [],
-	lifestyleGoals: [],
-	categories: defaultCategories,
-	wallets: [],
-	currency: "USD",
-	lifestyleSettings: {
-		incomeSource: "default_wallet",
-		percentages: DEFAULT_PERCENTAGES,
-	},
-};
+const PERSIST_DEBOUNCE_MS = 250;
 
 export function useStore() {
-	const [state, setState] = useState<AppState>(() => {
-		const stored = localStorage.getItem(STORAGE_KEY);
-		if (stored) {
-			try {
-				const parsed = JSON.parse(stored);
-				// Ensure lifestyleSettings and percentages exist
-				if (parsed.lifestyleSettings && !parsed.lifestyleSettings.percentages) {
-					parsed.lifestyleSettings.percentages =
-						defaultState.lifestyleSettings?.percentages;
-				}
-				return { ...defaultState, ...parsed };
-			} catch (e) {
-				console.error("Failed to parse stored data", e);
-			}
-		}
-		return defaultState;
-	});
+	const [state, setState] = useState<AppState>(defaultAppState);
+	const [isReady, setIsReady] = useState(false);
+	const persistTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
 	useEffect(() => {
-		localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-	}, [state]);
+		let cancelled = false;
+		(async () => {
+			try {
+				await migrateLocalStorageToDexieIfNeeded();
+				const loaded = await loadAppState();
+				if (!cancelled) {
+					setState(loaded);
+					setIsReady(true);
+				}
+			} catch (e) {
+				console.error("Failed to load app data from IndexedDB", e);
+				if (!cancelled) {
+					setState(defaultAppState);
+					setIsReady(true);
+				}
+			}
+		})();
+		return () => {
+			cancelled = true;
+		};
+	}, []);
+
+	useEffect(() => {
+		if (!isReady) return;
+		if (persistTimerRef.current) {
+			clearTimeout(persistTimerRef.current);
+		}
+		persistTimerRef.current = setTimeout(() => {
+			persistTimerRef.current = null;
+			persistAppState(state).catch((e) =>
+				console.error("Failed to persist app data", e),
+			);
+		}, PERSIST_DEBOUNCE_MS);
+		return () => {
+			if (persistTimerRef.current) {
+				clearTimeout(persistTimerRef.current);
+				persistTimerRef.current = null;
+			}
+		};
+	}, [state, isReady]);
 
 	// Consolidate recurring transaction processing and salary sync
 	useEffect(() => {
+		if (!isReady) return;
 		setState((prev) => {
 			let hasChanges = false;
 			let nextRecurring = [...prev.recurringTransactions];
@@ -170,7 +190,7 @@ export function useStore() {
 
 			return prev;
 		});
-	}, []);
+	}, [isReady]);
 
 	const addTransaction = (transaction: Transaction) => {
 		const transactionWithStatus = {
@@ -448,15 +468,16 @@ export function useStore() {
 			lifestyleSettings:
 				data.lifestyleSettings ||
 				prev.lifestyleSettings ||
-				defaultState.lifestyleSettings,
+				defaultAppState.lifestyleSettings,
 		}));
 	};
 
 	const clearData = () => {
-		setState(defaultState);
+		setState(defaultAppState);
 	};
 
 	return {
+		isReady,
 		state,
 		addTransaction,
 		updateTransaction,
