@@ -25,29 +25,33 @@ export function LogTransactionModal({
 
 	const amountInputRef = useRef<HTMLInputElement>(null);
 
+	// Reset only when opening (or initialType changes), not when `categories` /
+	// `wallets` get new array references each parent render — that was clearing
+	// the amount while typing.
+	// biome-ignore lint/correctness/useExhaustiveDependencies: Same as TransactionModal — including categories/wallets would reset the form on every parent render.
 	useEffect(() => {
-		if (isOpen) {
-			const type = initialType || "need";
-			setTLifestyleType(type);
+		if (!isOpen) return;
 
-			const filteredCats = categories.filter(
-				(c) => c.lifestyleType === type && c.type === "expense",
-			);
-			setTCategory(filteredCats[0]?.name || "");
+		const type = initialType || "need";
+		setTLifestyleType(type);
 
-			const defaultWallet = wallets.find((w) => w.isDefault) || wallets[0];
-			setTWalletId(defaultWallet?.id || "");
+		const filteredCats = categories.filter(
+			(c) => c.lifestyleType === type && c.type === "expense",
+		);
+		setTCategory(filteredCats[0]?.name || "");
 
-			setTAmount("");
-			setTDescription("");
-			setTDate(new Date().toISOString().split("T")[0]);
+		const defaultWallet = wallets.find((w) => w.isDefault) || wallets[0];
+		setTWalletId(defaultWallet?.id || "");
 
-			// Focus the amount input
-			setTimeout(() => {
-				amountInputRef.current?.focus();
-			}, 100);
-		}
-	}, [isOpen, initialType, categories, wallets]);
+		setTAmount("");
+		setTDescription("");
+		setTDate(new Date().toISOString().split("T")[0]);
+
+		const t = window.setTimeout(() => {
+			amountInputRef.current?.focus();
+		}, 100);
+		return () => window.clearTimeout(t);
+	}, [isOpen, initialType]);
 
 	const handleLifestyleTypeChange = (
 		type: "need" | "want" | "savings" | "income",

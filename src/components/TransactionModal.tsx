@@ -7,6 +7,17 @@ import type { RecurrenceType, TransactionType } from "../types";
 import { Modal } from "./Modal";
 import type { TransactionModalProps } from "./types";
 
+function formatAmountWithCommas(value: string): string {
+	const [integer, decimal] = value.split(".");
+	const formattedInteger = (integer ?? "").replace(
+		/\B(?=(\d{3})+(?!\d))/g,
+		",",
+	);
+	return decimal !== undefined
+		? `${formattedInteger}.${decimal}`
+		: formattedInteger;
+}
+
 export function TransactionModal({
 	isOpen,
 	onClose,
@@ -31,14 +42,6 @@ export function TransactionModal({
 
 	const amountInputRef = useRef<HTMLInputElement>(null);
 
-	const formatWithCommas = (value: string) => {
-		const [integer, decimal] = value.split(".");
-		const formattedInteger = integer.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-		return decimal !== undefined
-			? `${formattedInteger}.${decimal}`
-			: formattedInteger;
-	};
-
 	const expenseCategories = categories.filter((c) => c.type === "expense");
 	const incomeCategories = categories.filter((c) => c.type === "income");
 
@@ -50,64 +53,64 @@ export function TransactionModal({
 		}
 	}, [isFutureDate, status]);
 
-	useEffect(() => {
-		if (isOpen) {
-			if (initialData) {
-				setAmount(initialData.amount?.toString() || "");
-				setDisplayAmount(
-					formatWithCommas(initialData.amount?.toString() || ""),
-				);
-				setType(initialData.type || "expense");
-				setCategory(
-					initialData.category ||
-						(initialData.type === "income"
-							? incomeCategories[0]?.name
-							: expenseCategories[0]?.name) ||
-						"",
-				);
-				setDescription(initialData.description || "");
-				setDate(
-					initialData.date
-						? initialData.date.split("T")[0]
-						: new Date().toISOString().split("T")[0],
-				);
-				setWalletId(
-					initialData.walletId ||
-						wallets.find((w) => w.isDefault)?.id ||
-						wallets[0]?.id ||
-						"",
-				);
-				setRecurrence(initialData.recurrence || "none");
-				setStatus(initialData.status || "posted");
-				setIsFixedCost(initialData.isFixedCost || false);
-			} else {
-				setAmount("");
-				setDisplayAmount("");
-				setType("expense");
-				setCategory(expenseCategories[0]?.name || "");
-				setDescription("");
-				setDate(new Date().toISOString().split("T")[0]);
-				setWalletId(
-					wallets.find((w) => w.isDefault)?.id || wallets[0]?.id || "",
-				);
-				setRecurrence("none");
-				setStatus("posted");
-				setIsFixedCost(false);
-			}
+	// Reset only when the modal opens (or when switching new ↔ edit), not on every
+	// parent re-render — unstable deps previously cleared the amount while typing.
+	const formSessionKey = !isOpen
+		? null
+		: initialData?.id ?? ("new" as const);
 
-			// Focus the amount input
-			setTimeout(() => {
-				amountInputRef.current?.focus();
-			}, 100);
+	// biome-ignore lint/correctness/useExhaustiveDependencies: Reset only on open or `formSessionKey` change. Listing categories/wallets/initialData re-runs every parent render and cleared the amount while typing.
+	useEffect(() => {
+		if (!isOpen || formSessionKey === null) return;
+
+		if (initialData) {
+			setAmount(initialData.amount?.toString() || "");
+			setDisplayAmount(
+				formatAmountWithCommas(initialData.amount?.toString() || ""),
+			);
+			setType(initialData.type || "expense");
+			setCategory(
+				initialData.category ||
+					(initialData.type === "income"
+						? incomeCategories[0]?.name
+						: expenseCategories[0]?.name) ||
+					"",
+			);
+			setDescription(initialData.description || "");
+			setDate(
+				initialData.date
+					? initialData.date.split("T")[0]
+					: new Date().toISOString().split("T")[0],
+			);
+			setWalletId(
+				initialData.walletId ||
+					wallets.find((w) => w.isDefault)?.id ||
+					wallets[0]?.id ||
+					"",
+			);
+			setRecurrence(initialData.recurrence || "none");
+			setStatus(initialData.status || "posted");
+			setIsFixedCost(initialData.isFixedCost || false);
+		} else {
+			setAmount("");
+			setDisplayAmount("");
+			setType("expense");
+			setCategory(expenseCategories[0]?.name || "");
+			setDescription("");
+			setDate(new Date().toISOString().split("T")[0]);
+			setWalletId(
+				wallets.find((w) => w.isDefault)?.id || wallets[0]?.id || "",
+			);
+			setRecurrence("none");
+			setStatus("posted");
+			setIsFixedCost(false);
 		}
-	}, [
-		isOpen,
-		initialData,
-		wallets,
-		expenseCategories[0]?.name,
-		formatWithCommas,
-		incomeCategories[0]?.name,
-	]);
+
+		const t = window.setTimeout(() => {
+			amountInputRef.current?.focus();
+		}, 100);
+		return () => window.clearTimeout(t);
+	}, [isOpen, formSessionKey]);
 
 	const handleTypeChange = (newType: TransactionType) => {
 		setType(newType);
@@ -180,7 +183,7 @@ export function TransactionModal({
 								const digitsOnly = rawValue.replace(".", "");
 								if (digitsOnly.length > 12) return;
 								setAmount(rawValue);
-								setDisplayAmount(formatWithCommas(rawValue));
+								setDisplayAmount(formatAmountWithCommas(rawValue));
 							}}
 							className="bg-transparent text-4xl font-bold text-slate-800 focus:outline-none w-full text-center"
 							required
