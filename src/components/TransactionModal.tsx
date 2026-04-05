@@ -150,6 +150,10 @@ export function TransactionModal({
 		[],
 	);
 
+	const fieldRowClass =
+		"flex h-14 shrink-0 items-center gap-4 border-b border-slate-100 px-4 hover:bg-slate-50 transition-colors";
+	const fieldRowLabelClass = `${fieldRowClass} cursor-pointer`;
+
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
 		if (!amount || Number.isNaN(Number(amount))) return;
@@ -242,7 +246,7 @@ export function TransactionModal({
 				<hr className="border-slate-100" />
 
 				<div className="flex flex-col">
-					<div className="flex items-center gap-4 p-4 border-b border-slate-100 hover:bg-slate-50 transition-colors">
+					<div className={fieldRowClass}>
 						<WalletIcon className="w-5 h-5 shrink-0 text-slate-400" />
 						<SheetSelect
 							value={walletId}
@@ -254,18 +258,18 @@ export function TransactionModal({
 						/>
 					</div>
 
-					<label className="flex items-center gap-4 p-4 border-b border-slate-100 cursor-pointer hover:bg-slate-50 transition-colors">
-						<Icons.Calendar className="w-5 h-5 text-slate-400" />
+					<label className={fieldRowLabelClass}>
+						<Icons.Calendar className="h-5 w-5 shrink-0 text-slate-400" />
 						<input
 							type="date"
 							value={date}
 							onChange={(e) => setDate(e.target.value)}
-							className="flex-1 bg-transparent focus:outline-none text-slate-700 text-sm"
+							className="h-full min-h-0 min-w-0 flex-1 bg-transparent text-sm text-slate-700 focus:outline-none"
 							required
 						/>
 					</label>
 
-					<div className="flex items-center gap-4 p-4 border-b border-slate-100 hover:bg-slate-50 transition-colors">
+					<div className={fieldRowClass}>
 						{(() => {
 							const selectedCat = (
 								type === "expense" ? expenseCategories : incomeCategories
@@ -290,9 +294,9 @@ export function TransactionModal({
 					</div>
 
 					{isFutureDate && (
-						<label className="flex items-center gap-4 p-4 border-b border-slate-100 cursor-pointer hover:bg-slate-50 transition-colors">
-							<Icons.Clock className="w-5 h-5 text-slate-400" />
-							<div className="flex-1 flex justify-between items-center">
+						<label className={fieldRowLabelClass}>
+							<Icons.Clock className="h-5 w-5 shrink-0 text-slate-400" />
+							<div className="flex min-h-0 min-w-0 flex-1 items-center justify-between">
 								<span className="text-slate-700 text-sm">Status</span>
 								<button
 									type="button"
@@ -311,18 +315,18 @@ export function TransactionModal({
 						</label>
 					)}
 
-					<label className="flex items-center gap-4 p-4 border-b border-slate-100 cursor-pointer hover:bg-slate-50 transition-colors">
-						<Icons.AlignLeft className="w-5 h-5 text-slate-400" />
+					<label className={fieldRowLabelClass}>
+						<Icons.AlignLeft className="h-5 w-5 shrink-0 text-slate-400" />
 						<input
 							type="text"
 							placeholder="Notes"
 							value={description}
 							onChange={(e) => setDescription(e.target.value)}
-							className="flex-1 bg-transparent focus:outline-none text-slate-700 text-sm placeholder:text-slate-400"
+							className="h-full min-h-0 min-w-0 flex-1 bg-transparent text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none"
 						/>
 					</label>
 
-					<div className="flex items-center gap-4 p-4 border-b border-slate-100 hover:bg-slate-50 transition-colors">
+					<div className={fieldRowClass}>
 						<RefreshCw className="w-5 h-5 shrink-0 text-slate-400" />
 						<SheetSelect
 							value={recurrence}
@@ -337,12 +341,14 @@ export function TransactionModal({
 					</div>
 
 					{recurrence !== "none" && type === "expense" && (
-						<label className="flex items-center justify-between p-4 border-b border-slate-100 cursor-pointer hover:bg-slate-50 transition-colors">
-							<div className="flex items-center gap-4">
-								<Icons.Lock className="w-5 h-5 text-slate-400" />
-								<span className="text-slate-700 text-sm">Fixed Cost</span>
+						<label
+							className={`${fieldRowLabelClass} justify-between`}
+						>
+							<div className="flex min-w-0 items-center gap-4">
+								<Icons.Lock className="h-5 w-5 shrink-0 text-slate-400" />
+								<span className="text-sm text-slate-700">Fixed Cost</span>
 							</div>
-							<div className="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
+							<div className="relative mr-2 inline-block w-10 shrink-0 select-none align-middle transition duration-200 ease-in">
 								<input
 									type="checkbox"
 									name="toggle"

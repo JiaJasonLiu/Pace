@@ -14,7 +14,7 @@ export function Layout({ children, activeTab, onTabChange }: LayoutProps) {
 		<div className="flex flex-col h-screen bg-slate-50 w-full max-w-md mx-auto shadow-xl overflow-hidden relative">
 			<main className="flex-1 overflow-y-auto p-4 pb-24 pt-6">{children}</main>
 
-			<nav className="absolute bottom-0 w-full bg-white border-t border-slate-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-20 pb-safe">
+			<nav className="absolute pb-4 bottom-0 w-full bg-white border-t border-slate-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-20 pb-safe">
 				<div className="flex justify-around items-center h-16">
 					{tabs.map((tab) => {
 						const Icon = tab.icon;

@@ -1,4 +1,3 @@
-import { ChevronDown } from "lucide-react";
 import {
 	useCallback,
 	useEffect,
@@ -132,7 +131,7 @@ export function SheetSelect({
 					<div
 						ref={menuRef}
 						role="listbox"
-						className="fixed rounded-xl border border-slate-200 bg-white py-1 shadow-lg shadow-slate-900/10 overflow-y-auto overscroll-contain"
+						className="fixed divide-y divide-slate-100 overflow-y-auto overflow-x-hidden overscroll-contain rounded-xl border border-slate-200 bg-white shadow-lg shadow-slate-900/10"
 						style={{
 							zIndex: MENU_Z,
 							left: menuBox.left,
@@ -150,10 +149,10 @@ export function SheetSelect({
 									role="option"
 									aria-selected={isActive}
 									disabled={opt.disabled}
-									className={`flex w-full items-center px-3 py-2.5 text-left text-sm transition-colors disabled:opacity-40 disabled:pointer-events-none ${
+									className={`flex min-h-14 w-full items-center px-4 py-2 text-left text-sm leading-snug text-slate-700 transition-colors disabled:pointer-events-none disabled:opacity-40 ${
 										isActive
-											? "bg-royal/10 text-royal-dark font-medium"
-											: "text-slate-700 hover:bg-slate-50"
+											? "bg-royal/10 font-medium text-royal-dark"
+											: "hover:bg-slate-50"
 									}`}
 									onClick={() => {
 										if (opt.disabled) return;
@@ -161,7 +160,7 @@ export function SheetSelect({
 										setOpen(false);
 									}}
 								>
-									<span className="min-w-0 break-words">{opt.label}</span>
+									<span className="min-w-0 wrap-break-word">{opt.label}</span>
 								</button>
 							);
 						})}
@@ -181,15 +180,11 @@ export function SheetSelect({
 				aria-haspopup="listbox"
 				aria-expanded={open}
 				onClick={() => !disabled && setOpen((o) => !o)}
-				className={`flex min-h-10 min-w-0 flex-1 items-center gap-2 rounded-lg text-left text-sm text-slate-700 outline-none focus-visible:ring-2 focus-visible:ring-royal/40 disabled:opacity-50 ${className}`}
+				className={`flex h-14 min-w-0 flex-1 items-center rounded-lg text-left text-sm leading-snug text-slate-700 outline-none focus-visible:ring-2 focus-visible:ring-royal/40 disabled:opacity-50 ${className}`}
 			>
 				<span className="min-w-0 flex-1 truncate">
 					{selected ? label : placeholder}
 				</span>
-				<ChevronDown
-					className={`h-4 w-4 shrink-0 text-slate-400 transition-transform ${open ? "rotate-180" : ""}`}
-					aria-hidden
-				/>
 			</button>
 			{menu}
 		</>
