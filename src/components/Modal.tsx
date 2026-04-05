@@ -1,6 +1,7 @@
 import { X } from "lucide-react";
 import { animate, motion, useMotionValue } from "motion/react";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, type TouchEvent } from "react";
+import { createPortal } from "react-dom";
 import type { ModalProps } from "./types";
 
 export function Modal({
@@ -12,25 +13,34 @@ export function Modal({
 	footer,
 }: ModalProps) {
 	const y = useMotionValue(0);
+	const sheetRef = useRef<HTMLDivElement>(null);
+	const headerRef = useRef<HTMLDivElement>(null);
 	const scrollRef = useRef<HTMLDivElement>(null);
 	const dragInfo = useRef({
 		isDragging: false,
+		fromChrome: false,
 		startY: 0,
 		startTime: 0,
 	});
 
 	useEffect(() => {
-		const element = scrollRef.current;
-		if (!element) return;
+		const sheet = sheetRef.current;
+		const header = headerRef.current;
+		const scroller = scrollRef.current;
+		if (!sheet || !scroller) return;
 
 		const handlePointerDown = (e: PointerEvent) => {
-			// Only handle primary button (left click or touch)
 			if (e.button !== 0 && e.pointerType === "mouse") return;
 
-			const isAtTop = element.scrollTop <= 0;
+			const fromChrome =
+				header != null &&
+				e.target instanceof Node &&
+				header.contains(e.target);
+			const isAtTop = fromChrome || scroller.scrollTop <= 0;
 			if (isAtTop) {
 				dragInfo.current = {
 					isDragging: true,
+					fromChrome,
 					startY: e.clientY,
 					startTime: Date.now(),
 				};
@@ -43,15 +53,16 @@ export function Modal({
 			const currentY = e.clientY;
 			const deltaY = currentY - dragInfo.current.startY;
 
-			// If swiping up (scrolling down the content), abort drag and let native scroll take over
 			if (deltaY < 0) {
 				dragInfo.current.isDragging = false;
 				y.set(0);
 				return;
 			}
 
-			// If swiping down and at the top, drag the modal
-			if (deltaY > 0 && element.scrollTop <= 0) {
+			if (
+				deltaY > 0 &&
+				(dragInfo.current.fromChrome || scroller.scrollTop <= 0)
+			) {
 				y.set(deltaY);
 			}
 		};
@@ -73,39 +84,59 @@ export function Modal({
 			dragInfo.current.isDragging = false;
 		};
 
-		element.addEventListener("pointerdown", handlePointerDown);
-		element.addEventListener("pointermove", handlePointerMove);
-		element.addEventListener("pointerup", handlePointerUp);
-		element.addEventListener("pointercancel", handlePointerUp);
+		const capture = { capture: true };
+		sheet.addEventListener("pointerdown", handlePointerDown, capture);
+		sheet.addEventListener("pointermove", handlePointerMove, capture);
+		sheet.addEventListener("pointerup", handlePointerUp, capture);
+		sheet.addEventListener("pointercancel", handlePointerUp, capture);
 
 		return () => {
-			element.removeEventListener("pointerdown", handlePointerDown);
-			element.removeEventListener("pointermove", handlePointerMove);
-			element.removeEventListener("pointerup", handlePointerUp);
-			element.removeEventListener("pointercancel", handlePointerUp);
+			sheet.removeEventListener("pointerdown", handlePointerDown, capture);
+			sheet.removeEventListener("pointermove", handlePointerMove, capture);
+			sheet.removeEventListener("pointerup", handlePointerUp, capture);
+			sheet.removeEventListener("pointercancel", handlePointerUp, capture);
 		};
 	}, [onClose, y]);
 
+	useEffect(() => {
+		if (!isOpen) return;
+		const prevOverflow = document.body.style.overflow;
+		document.body.style.overflow = "hidden";
+		return () => {
+			document.body.style.overflow = prevOverflow;
+		};
+	}, [isOpen]);
+
 	if (!isOpen) return null;
 
-	return (
+	const stopTouchBubble = (e: TouchEvent) => {
+		e.stopPropagation();
+	};
+
+	const modalTree = (
 		<motion.div
 			initial={{ opacity: 0 }}
 			animate={{ opacity: 1 }}
 			exit={{ opacity: 0 }}
-			className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/40 backdrop-blur-sm"
+			onTouchStart={stopTouchBubble}
+			onTouchMove={stopTouchBubble}
+			onTouchEnd={stopTouchBubble}
+			className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/40 backdrop-blur-sm overscroll-none"
 		>
 			<div className="fixed inset-0" onClick={onClose} />
 			<motion.div
-				ref={scrollRef}
-				style={{ y, touchAction: "pan-y" }}
+				ref={sheetRef}
+				style={{ y }}
 				initial={{ y: "100%" }}
 				animate={{ y: 0 }}
 				exit={{ y: "100%" }}
 				transition={{ type: "spring", damping: 25, stiffness: 300 }}
-				className="bg-white w-full max-w-md h-[95vh] rounded-t-3xl shadow-2xl relative z-10 flex flex-col overflow-y-auto overflow-x-hidden overscroll-none"
+				className="bg-white w-full max-w-md h-[95vh] rounded-t-3xl shadow-2xl relative z-10 flex flex-col overflow-hidden overscroll-none"
 			>
-				<div className="sticky top-0 z-30 flex flex-col justify-center items-center p-4 border-b border-slate-100 bg-slate-50 flex-shrink-0">
+				<div
+					ref={headerRef}
+					className="z-30 flex flex-col justify-center items-center p-4 border-b border-slate-100 bg-slate-50 flex-shrink-0 touch-none"
+				>
 					<div className="w-12 h-1.5 bg-slate-200 rounded-full mb-4" />
 					<div className="w-full flex justify-center items-center relative">
 						<div className="absolute left-1">
@@ -124,14 +155,21 @@ export function Modal({
 					</div>
 				</div>
 
-				<div className="p-5 flex-1 flex flex-col">{children}</div>
+				<div
+					ref={scrollRef}
+					className="p-5 flex-1 flex flex-col min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain"
+				>
+					{children}
+				</div>
 
 				{footer && (
-					<div className="sticky bottom-0 z-30 p-5 border-t border-slate-100 bg-white flex-shrink-0 mt-auto">
+					<div className="z-30 p-5 border-t border-slate-100 bg-white flex-shrink-0 touch-none">
 						{footer}
 					</div>
 				)}
 			</motion.div>
 		</motion.div>
 	);
+
+	return createPortal(modalTree, document.body);
 }

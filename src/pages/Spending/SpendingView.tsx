@@ -307,6 +307,7 @@ export function SpendingView({
 				onSwipedLeft: handleNextWeek,
 				onSwipedRight: handlePrevWeek,
 				trackMouse: true,
+				trackTouch: !isModalOpen,
 			})}
 		>
 			<div className="flex items-center justify-between mb-4 bg-white p-2 rounded-2xl shadow-sm border border-slate-100">
