@@ -2,9 +2,10 @@ import { isAfter, parseISO, startOfDay } from "date-fns";
 import * as Icons from "lucide-react";
 import { RefreshCw, Trash2, Wallet as WalletIcon } from "lucide-react";
 import type React from "react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { RecurrenceType, TransactionType } from "../types";
 import { Modal } from "./Modal";
+import { SheetSelect, type SheetSelectOption } from "./SheetSelect";
 import type { TransactionModalProps } from "./types";
 
 function formatAmountWithCommas(value: string): string {
@@ -120,9 +121,39 @@ export function TransactionModal({
 		}
 	};
 
+	const walletOptions: SheetSelectOption[] = useMemo(
+		() => [
+			{ value: "", label: "Select a wallet", disabled: true },
+			...wallets.map((w) => ({ value: w.id, label: w.name })),
+		],
+		[wallets],
+	);
+
+	const categoryOptions: SheetSelectOption[] = useMemo(() => {
+		const cats =
+			type === "expense" ? expenseCategories : incomeCategories;
+		return cats.map((cat) => ({
+			value: cat.name,
+			label:
+				cat.lifestyleType && cat.lifestyleType !== "none"
+					? `(${cat.lifestyleType.charAt(0).toUpperCase() + cat.lifestyleType.slice(1)}) ${cat.name}`
+					: cat.name,
+		}));
+	}, [type, expenseCategories, incomeCategories]);
+
+	const recurrenceOptions: SheetSelectOption[] = useMemo(
+		() => [
+			{ value: "none", label: "One-time" },
+			{ value: "weekly", label: "Every Week" },
+			{ value: "monthly", label: "Every Month" },
+		],
+		[],
+	);
+
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
 		if (!amount || Number.isNaN(Number(amount))) return;
+		if (!walletId) return;
 
 		onSave({
 			amount: Number(amount),
@@ -211,24 +242,17 @@ export function TransactionModal({
 				<hr className="border-slate-100" />
 
 				<div className="flex flex-col">
-					<label className="flex items-center gap-4 p-4 border-b border-slate-100 cursor-pointer hover:bg-slate-50 transition-colors">
-						<WalletIcon className="w-5 h-5 text-slate-400" />
-						<select
+					<div className="flex items-center gap-4 p-4 border-b border-slate-100 hover:bg-slate-50 transition-colors">
+						<WalletIcon className="w-5 h-5 shrink-0 text-slate-400" />
+						<SheetSelect
 							value={walletId}
-							onChange={(e) => setWalletId(e.target.value)}
-							className="flex-1 bg-transparent focus:outline-none text-slate-700 text-sm appearance-none"
-							required
-						>
-							<option value="" disabled>
-								Select a wallet
-							</option>
-							{wallets.map((w) => (
-								<option key={w.id} value={w.id}>
-									{w.name}
-								</option>
-							))}
-						</select>
-					</label>
+							onChange={setWalletId}
+							options={walletOptions}
+							placeholder="Select a wallet"
+							className="min-w-0 flex-1"
+							aria-label="Wallet"
+						/>
+					</div>
 
 					<label className="flex items-center gap-4 p-4 border-b border-slate-100 cursor-pointer hover:bg-slate-50 transition-colors">
 						<Icons.Calendar className="w-5 h-5 text-slate-400" />
@@ -241,34 +265,29 @@ export function TransactionModal({
 						/>
 					</label>
 
-					<label className="flex items-center gap-4 p-4 border-b border-slate-100 cursor-pointer hover:bg-slate-50 transition-colors">
+					<div className="flex items-center gap-4 p-4 border-b border-slate-100 hover:bg-slate-50 transition-colors">
 						{(() => {
 							const selectedCat = (
 								type === "expense" ? expenseCategories : incomeCategories
 							).find((c) => c.name === category);
 							const IconComponent = selectedCat
-								? (Icons as any)[selectedCat.icon] || Icons.HelpCircle
+								? (Icons as Record<string, typeof Icons.Tag>)[
+										selectedCat.icon
+									] || Icons.HelpCircle
 								: Icons.Tag;
-							return <IconComponent className="w-5 h-5 text-slate-400" />;
+							return (
+								<IconComponent className="w-5 h-5 shrink-0 text-slate-400" />
+							);
 						})()}
-						<select
+						<SheetSelect
 							value={category}
-							onChange={(e) => setCategory(e.target.value)}
-							className="flex-1 bg-transparent focus:outline-none text-slate-700 text-sm appearance-none"
-							required
-						>
-							{(type === "expense" ? expenseCategories : incomeCategories).map(
-								(cat) => (
-									<option key={cat.id} value={cat.name}>
-										{cat.lifestyleType && cat.lifestyleType !== "none"
-											? `(${cat.lifestyleType.charAt(0).toUpperCase() + cat.lifestyleType.slice(1)}) `
-											: ""}
-										{cat.name}
-									</option>
-								),
-							)}
-						</select>
-					</label>
+							onChange={setCategory}
+							options={categoryOptions}
+							placeholder="Select category"
+							className="min-w-0 flex-1"
+							aria-label="Category"
+						/>
+					</div>
 
 					{isFutureDate && (
 						<label className="flex items-center gap-4 p-4 border-b border-slate-100 cursor-pointer hover:bg-slate-50 transition-colors">
@@ -303,18 +322,19 @@ export function TransactionModal({
 						/>
 					</label>
 
-					<label className="flex items-center gap-4 p-4 border-b border-slate-100 cursor-pointer hover:bg-slate-50 transition-colors">
-						<RefreshCw className="w-5 h-5 text-slate-400" />
-						<select
+					<div className="flex items-center gap-4 p-4 border-b border-slate-100 hover:bg-slate-50 transition-colors">
+						<RefreshCw className="w-5 h-5 shrink-0 text-slate-400" />
+						<SheetSelect
 							value={recurrence}
-							onChange={(e) => setRecurrence(e.target.value as any)}
-							className="flex-1 bg-transparent focus:outline-none text-slate-700 text-sm appearance-none"
-						>
-							<option value="none">One-time</option>
-							<option value="weekly">Every Week</option>
-							<option value="monthly">Every Month</option>
-						</select>
-					</label>
+							onChange={(v) =>
+								setRecurrence(v as RecurrenceType | "none")
+							}
+							options={recurrenceOptions}
+							placeholder="Recurrence"
+							className="min-w-0 flex-1"
+							aria-label="Recurrence"
+						/>
+					</div>
 
 					{recurrence !== "none" && type === "expense" && (
 						<label className="flex items-center justify-between p-4 border-b border-slate-100 cursor-pointer hover:bg-slate-50 transition-colors">
