@@ -92,11 +92,6 @@ export function WalletsView({
 		setIsModalOpen(true);
 	};
 
-	const _handleOpenEdit = (w: Wallet, e: React.MouseEvent) => {
-		e.stopPropagation();
-		setSelectedWalletId(w.id);
-	};
-
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
 		if (!name.trim() || (balance !== "" && Number.isNaN(Number(balance))))

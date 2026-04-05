@@ -1,20 +1,43 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# Pace
 
-# Run and deploy your AI Studio app
+Pace is a personal budgeting app: track spending and recurring transactions, manage wallets and categories, set lifestyle goals, and adjust preferences in one place. Data is stored locally in the browser (IndexedDB via Dexie) for a fast, private workflow.
 
-This contains everything you need to run your app locally.
+## Features
 
-View your app in AI Studio: https://ai.studio/apps/da8376b2-652b-4a5b-bc58-af564dd016b5
+- **Spending** — Transactions, recurring items, and categories
+- **Wallets** — Multiple wallets and balances
+- **Lifestyle** — Goals and lifestyle settings tied to your plan
+- **Settings** — Categories, currency, and app configuration
 
-## Run Locally
+## Stack
 
-**Prerequisites:**  Node.js
+React 19, Vite, TypeScript, Tailwind CSS, Dexie, and PWA support via `vite-plugin-pwa`.
 
+## Run locally
+
+**Prerequisites:** Node.js (LTS recommended)
 
 1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+
+   ```bash
+   npm install
+   ```
+   
+3. Start the dev server:
+
+   ```bash
+   npm run dev
+   ```
+
+   The app is served on port **3000** by default.
+
+## Scripts
+
+| Command | Description |
+| --- | --- |
+| `npm run dev` | Dev server |
+| `npm run build` | Production build |
+| `npm run preview` | Preview the production build |
+| `npm run lint` / `npm run lint:fix` | Lint with Biome |
+| `npm run format` / `npm run format:fix` | Format with Biome |
+| `npm run typecheck` | TypeScript (`tsc --noEmit`) |

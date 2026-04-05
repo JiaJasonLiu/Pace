@@ -169,14 +169,14 @@ export function LogTransactionModal({
 										c.type ===
 											(tLifestyleType === "income" ? "income" : "expense"),
 								)
-								.map((cat) => (
-									<option key={cat.id} value={cat.name}>
-										(
-										{cat.lifestyleType.charAt(0).toUpperCase() +
-											cat.lifestyleType.slice(1)}
-										) {cat.name}
-									</option>
-								))}
+								.map((cat) => {
+									const lt = cat.lifestyleType ?? "";
+									return (
+										<option key={cat.id} value={cat.name}>
+											({lt.charAt(0).toUpperCase() + lt.slice(1)}) {cat.name}
+										</option>
+									);
+								})}
 						</select>
 					</label>
 

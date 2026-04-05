@@ -1,5 +1,6 @@
 import { isAfter, parseISO, startOfDay } from "date-fns";
 import * as Icons from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { RefreshCw, Trash2, Wallet as WalletIcon } from "lucide-react";
 import type React from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -275,7 +276,7 @@ export function TransactionModal({
 								type === "expense" ? expenseCategories : incomeCategories
 							).find((c) => c.name === category);
 							const IconComponent = selectedCat
-								? (Icons as Record<string, typeof Icons.Tag>)[
+								? (Icons as unknown as Record<string, LucideIcon>)[
 										selectedCat.icon
 									] || Icons.HelpCircle
 								: Icons.Tag;

@@ -65,9 +65,9 @@ export function LifestyleView({
     const [selectedCategory, setSelectedCategory] = useState<
         "need" | "want" | "savings" | null
     >(null);
-    const [tLifestyleType, setTLifestyleType] = useState<
-        "need" | "want" | "savings" | "income"
-    >("need");
+    const [tLifestyleType] = useState<"need" | "want" | "savings" | "income">(
+        "need",
+    );
 
     const data = useLifestyleData({
         goals,

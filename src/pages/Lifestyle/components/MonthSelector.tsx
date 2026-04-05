@@ -1,6 +1,5 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import React from "react";
 import { format } from "date-fns";
 
 interface MonthSelectorProps {

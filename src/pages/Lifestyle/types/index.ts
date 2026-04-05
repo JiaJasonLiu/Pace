@@ -59,5 +59,5 @@ export interface LogTransactionModalProps {
 	categories: Category[];
 	wallets: Wallet[];
 	currency: string;
-	initialType?: "need" | "want" | "savings";
+	initialType?: "need" | "want" | "savings" | "income";
 }

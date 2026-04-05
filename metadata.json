@@ -1,5 +1,5 @@
 {
-	"name": "Royal Budget",
-	"description": "A minimal, mobile-first budget tracker with savings analysis and lifestyle goal planning.",
+	"name": "Pace",
+	"description": "A personal budgeting app: track spending and recurring transactions, manage wallets and categories, set lifestyle goals, and adjust preferences in one place.",
 	"requestFramePermissions": []
 }
