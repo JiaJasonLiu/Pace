@@ -1,33 +1,28 @@
 import { useState } from "react";
-import { 
-    Heart, 
-    Info, 
-    PiggyBank, 
-    Plus, 
-    Settings, 
-    ShieldCheck, 
-    Trash2, 
+import {
+    Heart,
+    Info,
+    PiggyBank,
+    Plus,
+    Settings,
+    ShieldCheck,
     Trophy,
-    ChevronLeft,
-    ChevronRight
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useSwipeable } from "react-swipeable";
-import { formatCurrency, getLifestyleColor } from "../../lib/utils";
+import { formatCurrency } from "../../lib/utils";
 import { useLifestyleData } from "./hooks/useLifestyleData";
 import { useLifestyleNavigation } from "./hooks/useLifestyleNavigation";
 import { useLifestyleModals } from "./hooks/useLifestyleModals";
 import { MonthSelector } from "./components/MonthSelector";
 import { CategoryHeader } from "./components/CategoryHeader";
+import { CategoryGoalsSection } from "./components/CategoryGoalsSection";
 import { OverviewSection } from "./components/OverviewSection";
 import { GoalModal } from "./components/GoalModal";
 import { LifestyleSettingsModal } from "./components/LifestyleSettingsModal";
 import { LogTransactionModal } from "./components/LogTransactionModal";
 import { MotivationalEarningSection } from "./components/MotivationalEarningSection";
 import type { LifestyleViewProps } from "./types";
-import { LifestyleGoal } from "../../types";
-import React from "react";
-import { format } from "date-fns";
 
 export function LifestyleView({
     goals,
@@ -185,15 +180,36 @@ export function LifestyleView({
                 )}
 
                 {selectedCategory ? (
-                    <CategoryHeader
-                        selectedCategory={selectedCategory}
-                        getCategoryBg={getCategoryBg}
-                        getCategoryColor={getCategoryColor}
-                        getCategoryIcon={getCategoryIcon}
-                        ruleTargets={data.ruleTargets}
-                        currency={currency}
-                        setSelectedCategory={setSelectedCategory}
-                    />
+                    <div className="space-y-6">
+                        <CategoryHeader
+                            selectedCategory={selectedCategory}
+                            getCategoryBg={getCategoryBg}
+                            getCategoryColor={getCategoryColor}
+                            getCategoryIcon={getCategoryIcon}
+                            ruleTargets={data.ruleTargets}
+                            currency={currency}
+                            setSelectedCategory={setSelectedCategory}
+                        />
+                        <CategoryGoalsSection
+                            selectedCategory={selectedCategory}
+                            goals={goals}
+                            transactions={transactions}
+                            categories={categories}
+                            currency={currency}
+                            currentDate={currentDate}
+                            ruleTargets={data.ruleTargets}
+                            actualSpending={data.actualSpending}
+                            onEditGoal={(goal) => {
+                                setEditingGoal(goal);
+                                setIsAdding(true);
+                            }}
+                            onDeleteGoal={onDeleteGoal}
+                            onOpenAdd={() => {
+                                setEditingGoal(null);
+                                setIsAdding(true);
+                            }}
+                        />
+                    </div>
                 ) : (
                     <AnimatePresence mode="wait" custom={direction}>
                         <motion.div
@@ -242,8 +258,35 @@ export function LifestyleView({
                 )}
             </div>
 
+            {lifestyleSettings && (
+                <button
+                    type="button"
+                    onClick={() => {
+                        setEditingGoal(null);
+                        setIsAdding(true);
+                    }}
+                    className="fixed bottom-24 right-6 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-slate-900 text-white shadow-lg shadow-slate-900/20 transition-transform hover:bg-slate-800 active:scale-95"
+                    aria-label="Add lifestyle goal"
+                >
+                    <Plus className="h-6 w-6" />
+                </button>
+            )}
+
             {/* Modals */}
-            <GoalModal isOpen={isAdding} onClose={() => setIsAdding(false)} onAddGoal={onAddGoal} onUpdateGoal={onUpdateGoal} editingGoal={editingGoal} currency={currency} wallets={wallets} selectedCategory={selectedCategory} categories={categories} />
+            <GoalModal
+                isOpen={isAdding}
+                onClose={() => {
+                    setIsAdding(false);
+                    setEditingGoal(null);
+                }}
+                onAddGoal={onAddGoal}
+                onUpdateGoal={onUpdateGoal}
+                editingGoal={editingGoal}
+                currency={currency}
+                wallets={wallets}
+                selectedCategory={selectedCategory}
+                categories={categories}
+            />
             <LogTransactionModal isOpen={isLoggingTransaction} onClose={() => setIsLoggingTransaction(false)} onAddTransaction={(t) => { onAddTransaction(t); setIsLoggingTransaction(false); }} currency={currency} categories={categories} wallets={wallets} initialType={tLifestyleType} />
             <LifestyleSettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} onUpdateLifestyleSettings={onUpdateLifestyleSettings} currency={currency} defaultWallet={defaultWallet} lifestyleSettings={lifestyleSettings} />
         </div>
