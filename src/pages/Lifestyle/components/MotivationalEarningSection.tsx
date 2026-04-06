@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import type React from "react";
 import { useState } from "react";
-import { formatCurrency } from "../../../lib/utils";
+import { formatCurrency, getCurrencySymbol } from "../../../lib/utils";
 import type { EarningAction } from "../../../types";
 import type { MotivationalEarningSectionProps } from "../types";
 
@@ -128,7 +128,7 @@ export function MotivationalEarningSection({
 							</label>
 							<div className="relative">
 								<span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-medium">
-									{currency === "USD" ? "$" : currency}
+									{getCurrencySymbol(currency)}
 								</span>
 								<input
 									type="number"

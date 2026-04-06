@@ -4,6 +4,7 @@ import type { LucideIcon } from "lucide-react";
 import { RefreshCw, Trash2, Wallet as WalletIcon } from "lucide-react";
 import type React from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { getCurrencySymbol } from "../lib/utils";
 import type { RecurrenceType, TransactionType } from "../types";
 import { Modal } from "./Modal";
 import { SheetSelect, type SheetSelectOption } from "./SheetSelect";
@@ -205,7 +206,7 @@ export function TransactionModal({
 				<div className="flex justify-center py-2 overflow-x-auto">
 					<div className="flex items-center justify-center w-full">
 						<span className="text-slate-400 text-xl font-medium mr-1">
-							{currency === "USD" ? "$" : currency}
+							{getCurrencySymbol(currency)}
 						</span>
 						<input
 							ref={amountInputRef}

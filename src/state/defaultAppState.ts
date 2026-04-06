@@ -8,7 +8,7 @@ export const defaultAppState: AppState = {
 	lifestyleGoals: [],
 	categories: defaultCategories,
 	wallets: [],
-	currency: "USD",
+	currency: "GBP",
 	lifestyleSettings: {
 		incomeSource: "default_wallet",
 		percentages: DEFAULT_PERCENTAGES,

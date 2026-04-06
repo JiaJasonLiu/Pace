@@ -9,6 +9,7 @@ import {
 import type React from "react";
 import { useEffect, useState } from "react";
 import { Modal } from "../../../components/Modal";
+import { getCurrencySymbol } from "../../../lib/utils";
 import type { Wallet } from "../../../types";
 import type { WalletModalProps } from "../types";
 
@@ -125,7 +126,7 @@ export function WalletModal({
 				<div className="flex justify-center py-2 overflow-x-auto">
 					<div className="flex items-center justify-center w-full">
 						<span className="text-slate-400 text-xl font-medium mr-1">
-							{currency === "USD" ? "$" : currency}
+							{getCurrencySymbol(currency)}
 						</span>
 						<input
 							type="number"

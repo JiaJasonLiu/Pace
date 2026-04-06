@@ -1,7 +1,11 @@
-import { AlignLeft, Edit2, PiggyBank } from "lucide-react";
+import * as Icons from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import { AlignLeft, PiggyBank } from "lucide-react";
 import type React from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Modal } from "../../../components/Modal";
+import { getCurrencySymbol } from "../../../lib/utils";
+import { SheetSelect, type SheetSelectOption } from "../../../components/SheetSelect";
 import type { GoalModalProps } from "../types";
 
 export function GoalModal({
@@ -22,10 +26,28 @@ export function GoalModal({
 	const [description, setDescription] = useState("");
 	const [category, setCategory] = useState<"need" | "want" | "savings">("need");
 
-	// Filter categories based on selected lifestyle type
-	const filteredCategories = categories.filter(
-		(c) => c.lifestyleType === category && c.type === "expense",
+	const filteredCategories = useMemo(
+		() =>
+			categories.filter(
+				(c) => c.lifestyleType === category && c.type === "expense",
+			),
+		[categories, category],
 	);
+
+	const categoryOptions: SheetSelectOption[] = useMemo(
+		() =>
+			filteredCategories.map((cat) => ({
+				value: cat.name,
+				label:
+					cat.lifestyleType && cat.lifestyleType !== "none"
+						? `(${cat.lifestyleType.charAt(0).toUpperCase() + cat.lifestyleType.slice(1)}) ${cat.name}`
+						: cat.name,
+			})),
+		[filteredCategories],
+	);
+
+	const fieldRowClass =
+		"flex h-14 shrink-0 items-center gap-4 border-b border-slate-100 px-4 hover:bg-slate-50 transition-colors";
 
 	useEffect(() => {
 		if (editingGoal) {
@@ -124,7 +146,7 @@ export function GoalModal({
 				<div className="flex justify-center py-2 overflow-x-auto">
 					<div className="flex items-center justify-center w-full">
 						<span className="text-slate-400 text-xl font-medium mr-1">
-							{currency === "USD" ? "$" : currency}
+							{getCurrencySymbol(currency)}
 						</span>
 						<input
 							type="number"
@@ -157,24 +179,29 @@ export function GoalModal({
 				<hr className="border-slate-100" />
 
 				<div className="flex flex-col">
-					<label className="flex items-center gap-4 p-4 border-b border-slate-100 cursor-pointer hover:bg-slate-50 transition-colors">
-						<Edit2 className="w-5 h-5 text-slate-400" />
-						<select
+					<div className={fieldRowClass}>
+						{(() => {
+							const selectedCat = filteredCategories.find(
+								(c) => c.name === title,
+							);
+							const IconComponent = selectedCat
+								? (Icons as unknown as Record<string, LucideIcon>)[
+										selectedCat.icon
+									] || Icons.HelpCircle
+								: Icons.Tag;
+							return (
+								<IconComponent className="w-5 h-5 shrink-0 text-slate-400" />
+							);
+						})()}
+						<SheetSelect
 							value={title}
-							onChange={(e) => setTitle(e.target.value)}
-							className="flex-1 bg-transparent focus:outline-none text-slate-700 text-sm appearance-none"
-							required
-						>
-							<option value="" disabled>
-								Select Category
-							</option>
-							{filteredCategories.map((cat) => (
-								<option key={cat.id} value={cat.name}>
-									{cat.name}
-								</option>
-							))}
-						</select>
-					</label>
+							onChange={setTitle}
+							options={categoryOptions}
+							placeholder="Select category"
+							className="min-w-0 flex-1"
+							aria-label="Category"
+						/>
+					</div>
 
 					{category === "savings" && (
 						<label className="flex items-center gap-4 p-4 border-b border-slate-100 cursor-pointer hover:bg-slate-50 transition-colors">

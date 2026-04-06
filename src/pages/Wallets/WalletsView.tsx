@@ -2,6 +2,7 @@ import { addDays, differenceInDays, format, parseISO } from "date-fns";
 import {
 	ArrowLeft,
 	Calendar,
+	ChevronDown,
 	ChevronRight,
 	PiggyBank,
 	Plus,
@@ -12,7 +13,7 @@ import {
 } from "lucide-react";
 import { AnimatePresence } from "motion/react";
 import React, { useState } from "react";
-import { formatCurrency } from "../../lib/utils";
+import { formatCurrency, getCurrencySymbol } from "../../lib/utils";
 import type { Wallet } from "../../types";
 import { WalletModal } from "./components/WalletModal";
 import type { WalletsViewProps } from "./types";
@@ -41,6 +42,7 @@ export function WalletsView({
 	const [isDefault, setIsDefault] = useState(false);
 	const [savingsGoal, setSavingsGoal] = useState("");
 	const [savingsEndDate, setSavingsEndDate] = useState("");
+	const [budgetOverviewExpanded, setBudgetOverviewExpanded] = useState(false);
 
 	// Sync form state when a wallet is selected for inline editing
 	React.useEffect(() => {
@@ -55,6 +57,10 @@ export function WalletsView({
 			setSavingsEndDate(selected.savingsEndDate || "");
 		}
 	}, [selectedWalletId, wallets]);
+
+	React.useEffect(() => {
+		setBudgetOverviewExpanded(false);
+	}, [selectedWalletId]);
 
 	const calculateWalletDailyRate = (walletId: string) => {
 		const walletTransactions = transactions.filter(
@@ -92,8 +98,10 @@ export function WalletsView({
 		setIsModalOpen(true);
 	};
 
-	const handleSubmit = (e: React.FormEvent) => {
-		e.preventDefault();
+	const handleSubmit = (
+		e?: React.FormEvent | React.MouseEvent<HTMLButtonElement>,
+	) => {
+		e?.preventDefault();
 		if (!name.trim() || (balance !== "" && Number.isNaN(Number(balance))))
 			return;
 
@@ -123,6 +131,7 @@ export function WalletsView({
 			onAddWallet(walletData);
 		}
 		setIsModalOpen(false);
+		setSelectedWalletId(null);
 	};
 
 	const handleDelete = (id: string) => {
@@ -150,6 +159,7 @@ export function WalletsView({
 	});
 
 	if (selectedWallet) {
+		const currencyLabel = getCurrencySymbol(currency);
 		const isSavings = selectedWallet.type === "savings";
 		const dailyRate = calculateWalletDailyRate(selectedWallet.id);
 		const target = Number(savingsGoal) || 0;
@@ -182,40 +192,75 @@ export function WalletsView({
 		const netWeeklyBudget = netMonthlyIncome / 4.33;
 
 		return (
-			<div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-				<div className="flex items-center justify-between">
+			<div className="relative -mx-4 flex min-h-[calc(100dvh-9rem)] flex-col animate-in fade-in slide-in-from-right-4 duration-300">
+				<div className="flex-1 space-y-6 px-4 pb-4">
 					<button
+						type="button"
 						onClick={() => setSelectedWalletId(null)}
 						className="flex items-center text-slate-500 hover:text-royal transition-colors"
 					>
-						<ArrowLeft className="w-5 h-5 mr-1" /> Back to Wallets
+						<ArrowLeft className="mr-1 h-5 w-5" /> Back to Wallets
 					</button>
-					<button
-						onClick={() => handleDelete(selectedWallet.id)}
-						className="text-rose-400 hover:text-rose-600 p-2 rounded-full hover:bg-rose-50 transition-colors flex items-center text-xs font-bold uppercase tracking-widest"
-					>
-						<Trash2 className="w-4 h-4 mr-1" /> Delete Wallet
-					</button>
-				</div>
+
+					{isDefaultWallet && type === "normal" && (
+						<div className="space-y-4 rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
+							<h3 className="flex items-center text-sm font-bold uppercase tracking-widest text-slate-800">
+								<Target className="mr-2 h-4 w-4 text-royal" /> Budget
+								Overview
+							</h3>
+
+							<button
+								type="button"
+								onClick={() => setBudgetOverviewExpanded((e) => !e)}
+								aria-expanded={budgetOverviewExpanded}
+								className="w-full rounded-2xl border border-royal/10 bg-royal/5 p-5 text-left transition-colors hover:bg-royal/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-royal/40"
+							>
+								<div className="flex items-start justify-between gap-3">
+									<div className="min-w-0 flex-1">
+										<div className="mb-2 flex items-center text-royal">
+											<span className="text-xs font-bold uppercase tracking-widest">
+												Weekly Budget
+											</span>
+										</div>
+										<p className="font-mono text-2xl font-bold text-royal-dark">
+											{formatCurrency(netWeeklyBudget, currency)}
+										</p>
+									</div>
+									<ChevronDown
+										className={`mt-1 h-5 w-5 shrink-0 text-royal transition-transform ${budgetOverviewExpanded ? "rotate-180" : ""}`}
+										aria-hidden
+									/>
+								</div>
+							</button>
+
+							{budgetOverviewExpanded && (
+								<div className="grid animate-in fade-in slide-in-from-top-2 grid-cols-1 gap-4 border-t border-slate-100 pt-4 duration-200 sm:grid-cols-2">
+									<div className="rounded-2xl border border-rose-100 bg-rose-50 p-5">
+										<div className="mb-2 flex items-center text-rose-500">
+											<span className="text-xs font-bold uppercase tracking-widest">
+												Fixed Costs
+											</span>
+										</div>
+										<p className="font-mono text-2xl font-bold text-rose-600">
+											-{formatCurrency(fixedCosts, currency)}
+										</p>
+									</div>
+									<div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-5">
+										<div className="mb-2 flex items-center text-emerald-600">
+											<span className="text-xs font-bold uppercase tracking-widest">
+												Net Monthly
+											</span>
+										</div>
+										<p className="font-mono text-2xl font-bold text-emerald-700">
+											{formatCurrency(netMonthlyIncome, currency)}
+										</p>
+									</div>
+								</div>
+							)}
+						</div>
+					)}
 
 				<div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 space-y-6">
-					<div className="flex rounded-xl overflow-hidden border border-slate-200 p-1 bg-slate-50">
-						<button
-							type="button"
-							onClick={() => setType("normal")}
-							className={`flex-1 py-2.5 text-sm font-bold rounded-lg transition-all ${type === "normal" ? "bg-white text-slate-800 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
-						>
-							Normal
-						</button>
-						<button
-							type="button"
-							onClick={() => setType("savings")}
-							className={`flex-1 py-2.5 text-sm font-bold rounded-lg transition-all ${type === "savings" ? "bg-white text-notion-green shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
-						>
-							Savings
-						</button>
-					</div>
-
 					<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 						<div>
 							<label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">
@@ -233,16 +278,16 @@ export function WalletsView({
 							<label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">
 								Current Balance
 							</label>
-							<div className="relative">
-								<span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xl font-medium">
-									{currency === "USD" ? "$" : currency}
+							<div className="flex min-w-0 items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 pl-4 transition-all focus-within:bg-white focus-within:ring-2 focus-within:ring-royal/50">
+								<span className="shrink-0 text-xl font-medium text-slate-400 tabular-nums">
+									{currencyLabel}
 								</span>
 								<input
 									type="number"
 									step="0.01"
 									value={balance}
 									onChange={(e) => setBalance(e.target.value)}
-									className="w-full pl-10 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-2xl font-bold focus:outline-none focus:ring-2 focus:ring-royal/50 focus:bg-white transition-all"
+									className="min-w-0 flex-1 border-0 bg-transparent py-4 pr-4 text-2xl font-bold text-slate-800 focus:outline-none focus:ring-0"
 								/>
 							</div>
 						</div>
@@ -252,16 +297,16 @@ export function WalletsView({
 								<label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">
 									Monthly Income
 								</label>
-								<div className="relative">
-									<span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xl font-medium">
-										{currency === "USD" ? "$" : currency}
+								<div className="flex min-w-0 items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 pl-4 transition-all focus-within:bg-white focus-within:ring-2 focus-within:ring-royal/50">
+									<span className="shrink-0 text-xl font-medium text-slate-400 tabular-nums">
+										{currencyLabel}
 									</span>
 									<input
 										type="number"
 										step="0.01"
 										value={monthlyIncome}
 										onChange={(e) => setMonthlyIncome(e.target.value)}
-										className="w-full pl-10 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-2xl font-bold focus:outline-none focus:ring-2 focus:ring-royal/50 focus:bg-white transition-all"
+										className="min-w-0 flex-1 border-0 bg-transparent py-4 pr-4 text-2xl font-bold text-slate-800 focus:outline-none focus:ring-0"
 									/>
 								</div>
 							</div>
@@ -273,16 +318,16 @@ export function WalletsView({
 									<label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">
 										Savings Goal (Optional)
 									</label>
-									<div className="relative">
-										<span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xl font-medium">
-											{currency === "USD" ? "$" : currency}
+									<div className="flex min-w-0 items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 pl-4 transition-all focus-within:bg-white focus-within:ring-2 focus-within:ring-royal/50">
+										<span className="shrink-0 text-xl font-medium text-slate-400 tabular-nums">
+											{currencyLabel}
 										</span>
 										<input
 											type="number"
 											step="0.01"
 											value={savingsGoal}
 											onChange={(e) => setSavingsGoal(e.target.value)}
-											className="w-full pl-10 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-2xl font-bold focus:outline-none focus:ring-2 focus:ring-royal/50 focus:bg-white transition-all"
+											className="min-w-0 flex-1 border-0 bg-transparent py-4 pr-4 text-2xl font-bold text-slate-800 focus:outline-none focus:ring-0"
 										/>
 									</div>
 								</div>
@@ -318,71 +363,7 @@ export function WalletsView({
 							</div>
 						)}
 					</div>
-
-					<div className="pt-4 flex gap-3">
-						<button
-							onClick={handleSubmit}
-							disabled={
-								!name.trim() ||
-								(balance !== "" && Number.isNaN(Number(balance)))
-							}
-							className="flex-1 py-4 bg-royal text-white rounded-2xl font-bold shadow-lg shadow-royal/20 hover:bg-royal-dark transition-all active:scale-[0.98] disabled:opacity-50"
-						>
-							Save Changes
-						</button>
-					</div>
 				</div>
-
-				{isDefaultWallet && type === "normal" && (
-					<div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 space-y-6">
-						<h3 className="text-sm font-bold text-slate-800 uppercase tracking-widest flex items-center">
-							<Target className="w-4 h-4 mr-2 text-royal" /> Budget Overview
-						</h3>
-
-						<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-							<div className="bg-slate-50 p-5 rounded-2xl border border-slate-100">
-								<div className="flex items-center text-slate-500 mb-2">
-									<span className="text-xs font-bold uppercase tracking-widest">
-										Gross Monthly
-									</span>
-								</div>
-								<p className="text-2xl font-mono font-bold text-slate-800">
-									{formatCurrency(monthlyIncomeValue, currency)}
-								</p>
-							</div>
-							<div className="bg-rose-50 p-5 rounded-2xl border border-rose-100">
-								<div className="flex items-center text-rose-500 mb-2">
-									<span className="text-xs font-bold uppercase tracking-widest">
-										Fixed Costs
-									</span>
-								</div>
-								<p className="text-2xl font-mono font-bold text-rose-600">
-									-{formatCurrency(fixedCosts, currency)}
-								</p>
-							</div>
-							<div className="bg-emerald-50 p-5 rounded-2xl border border-emerald-100">
-								<div className="flex items-center text-emerald-600 mb-2">
-									<span className="text-xs font-bold uppercase tracking-widest">
-										Net Monthly
-									</span>
-								</div>
-								<p className="text-2xl font-mono font-bold text-emerald-700">
-									{formatCurrency(netMonthlyIncome, currency)}
-								</p>
-							</div>
-							<div className="bg-royal/5 p-5 rounded-2xl border border-royal/10">
-								<div className="flex items-center text-royal mb-2">
-									<span className="text-xs font-bold uppercase tracking-widest">
-										Weekly Budget
-									</span>
-								</div>
-								<p className="text-2xl font-mono font-bold text-royal-dark">
-									{formatCurrency(netWeeklyBudget, currency)}
-								</p>
-							</div>
-						</div>
-					</div>
-				)}
 
 				{isSavings && target > 0 && (
 					<div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 space-y-6">
@@ -446,6 +427,30 @@ export function WalletsView({
 						</div>
 					</div>
 				)}
+
+					<button
+						type="button"
+						onClick={() => handleDelete(selectedWallet.id)}
+						className="flex w-full items-center justify-center gap-2 rounded-2xl border border-rose-200 bg-rose-50 py-4 text-sm font-bold uppercase tracking-widest text-rose-600 transition-colors hover:bg-rose-100"
+					>
+						<Trash2 className="h-5 w-5 shrink-0" />
+						Delete Wallet
+					</button>
+				</div>
+
+				<div className="sticky bottom-0 z-20 mt-auto bg-transparent px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+					<button
+						type="button"
+						onClick={handleSubmit}
+						disabled={
+							!name.trim() ||
+							(balance !== "" && Number.isNaN(Number(balance)))
+						}
+						className="w-full rounded-2xl bg-royal py-4 text-center text-sm font-bold text-white shadow-lg shadow-royal/20 transition-all hover:bg-royal-dark active:scale-[0.98] disabled:opacity-50"
+					>
+						Save
+					</button>
+				</div>
 			</div>
 		);
 	}

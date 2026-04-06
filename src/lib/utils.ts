@@ -6,8 +6,23 @@ export function cn(...inputs: ClassValue[]) {
 	return twMerge(clsx(inputs));
 }
 
-export const formatCurrency = (amount: number, currency: string = "USD") => {
-	return new Intl.NumberFormat("en-US", {
+/** Symbol for display next to amount inputs (e.g. £, $, €). Falls back to the code if unknown. */
+export function getCurrencySymbol(currencyCode: string): string {
+	try {
+		const parts = new Intl.NumberFormat(undefined, {
+			style: "currency",
+			currency: currencyCode,
+			currencyDisplay: "narrowSymbol",
+		}).formatToParts(0);
+		const symbol = parts.find((p) => p.type === "currency")?.value;
+		return symbol?.trim() || currencyCode;
+	} catch {
+		return currencyCode;
+	}
+}
+
+export const formatCurrency = (amount: number, currency: string = "GBP") => {
+	return new Intl.NumberFormat(undefined, {
 		style: "currency",
 		currency: currency,
 	}).format(amount);

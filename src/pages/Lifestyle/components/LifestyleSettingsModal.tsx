@@ -2,7 +2,7 @@ import { ShieldCheck } from "lucide-react";
 import type React from "react";
 import { useEffect, useState } from "react";
 import { Modal } from "../../../components/Modal";
-import { formatCurrency } from "../../../lib/utils";
+import { formatCurrency, getCurrencySymbol } from "../../../lib/utils";
 import type { LifestyleSettingsModalProps } from "../types";
 
 export function LifestyleSettingsModal({
@@ -132,7 +132,7 @@ export function LifestyleSettingsModal({
 							</label>
 							<div className="relative">
 								<span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-lg font-medium">
-									{currency === "USD" ? "$" : currency}
+									{getCurrencySymbol(currency)}
 								</span>
 								<input
 									type="number"

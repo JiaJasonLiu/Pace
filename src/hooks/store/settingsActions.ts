@@ -45,7 +45,7 @@ export function createSettingsActions(setState: SetAppState) {
 			lifestyleGoals: data.lifestyleGoals || prev.lifestyleGoals,
 			categories: data.categories || prev.categories || defaultCategories,
 			wallets: data.wallets || prev.wallets || [],
-			currency: data.currency || prev.currency || "USD",
+			currency: data.currency || prev.currency || defaultAppState.currency,
 			lifestyleSettings:
 				data.lifestyleSettings ||
 				prev.lifestyleSettings ||

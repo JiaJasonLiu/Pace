@@ -1,8 +1,9 @@
 import * as Icons from "lucide-react";
 import { Trash2 } from "lucide-react";
 import type React from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Modal } from "../../../components/Modal";
+import { SheetSelect, type SheetSelectOption } from "../../../components/SheetSelect";
 import type { Category, TransactionType } from "../../../types";
 import type { CategoryModalProps } from "../types";
 
@@ -63,6 +64,42 @@ export function CategoryModal({
 			setMainCategoryId("");
 		}
 	}, [editingCategory]);
+
+	const mainCategoryCandidates = useMemo(
+		() =>
+			(categories || []).filter(
+				(c) =>
+					!c.mainCategoryId &&
+					c.id !== editingCategory?.id &&
+					c.type === type,
+			),
+		[categories, editingCategory?.id, type],
+	);
+
+	const mainCategoryOptions: SheetSelectOption[] = useMemo(
+		() => [
+			{ value: "", label: "None (Top Level)" },
+			...mainCategoryCandidates.map((c) => ({
+				value: c.id,
+				label: c.name,
+			})),
+		],
+		[mainCategoryCandidates],
+	);
+
+	const mainCategorySelectDisabled =
+		!!editingCategory &&
+		(categories || []).some((c) => c.mainCategoryId === editingCategory.id);
+
+	const handleMainCategoryChange = (newMainId: string) => {
+		setMainCategoryId(newMainId);
+		if (newMainId) {
+			const mainCat = (categories || []).find((c) => c.id === newMainId);
+			if (mainCat?.lifestyleType) {
+				setLifestyleType(mainCat.lifestyleType);
+			}
+		}
+	};
 
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
@@ -212,49 +249,22 @@ export function CategoryModal({
 						<label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
 							Main Category
 						</label>
-						<select
-							value={mainCategoryId}
-							onChange={(e) => {
-								const newMainId = e.target.value;
-								setMainCategoryId(newMainId);
-								if (newMainId) {
-									const mainCat = categories.find((c) => c.id === newMainId);
-									if (mainCat?.lifestyleType) {
-										setLifestyleType(mainCat.lifestyleType);
-									}
-								}
-							}}
-							disabled={
-								editingCategory
-									? (categories || []).some(
-											(c) => c.mainCategoryId === editingCategory.id,
-										)
-									: false
-							}
-							className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-royal/50 focus:bg-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-						>
-							<option value="">None (Top Level)</option>
-							{(categories || [])
-								.filter(
-									(c) =>
-										!c.mainCategoryId &&
-										c.id !== editingCategory?.id &&
-										c.type === type,
-								)
-								.map((c) => (
-									<option key={c.id} value={c.id}>
-										{c.name}
-									</option>
-								))}
-						</select>
-						{editingCategory &&
-							(categories || []).some(
-								(c) => c.mainCategoryId === editingCategory.id,
-							) && (
-								<p className="text-[10px] text-rose-500 mt-1">
-									Cannot be a subcategory because it has subcategories.
-								</p>
-							)}
+						<div className="rounded-xl border border-slate-200 bg-slate-50 transition-colors focus-within:bg-white focus-within:ring-2 focus-within:ring-royal/50">
+							<SheetSelect
+								value={mainCategoryId}
+								onChange={handleMainCategoryChange}
+								options={mainCategoryOptions}
+								placeholder="None (Top Level)"
+								disabled={mainCategorySelectDisabled}
+								className="w-full h-auto! min-h-0 px-3 py-3 bg-transparent rounded-xl text-sm focus-visible:ring-0"
+								aria-label="Main category"
+							/>
+						</div>
+						{editingCategory && mainCategorySelectDisabled && (
+							<p className="text-[10px] text-rose-500 mt-1">
+								Cannot be a subcategory because it has subcategories.
+							</p>
+						)}
 					</div>
 				</div>
 
