@@ -25,7 +25,6 @@ export interface ModalProps {
 export interface TransactionCardProps {
 	transaction: Transaction;
 	category?: Category;
-	mainCategory?: Category;
 	currency: string;
 	onClick?: () => void;
 	onAdd?: (e: React.MouseEvent) => void;

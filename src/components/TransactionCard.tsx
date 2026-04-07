@@ -8,8 +8,6 @@ export const TransactionCard: React.FC<TransactionCardProps> = (props) => {
 	const {
 		transaction,
 		category,
-		mainCategory,
-		currency: _currency,
 		onClick,
 		onAdd,
 		icon,
@@ -38,45 +36,49 @@ export const TransactionCard: React.FC<TransactionCardProps> = (props) => {
 	return (
 		<div
 			onClick={onClick}
-			className={`flex justify-between items-center p-4 rounded-xl shadow-sm border cursor-pointer hover:border-royal/30 hover:shadow-md transition-all active:scale-[0.98] ${
+			className={`flex justify-between items-center gap-3 p-4 rounded-xl shadow-sm border cursor-pointer hover:border-royal/30 hover:shadow-md transition-all active:scale-[0.98] ${
 				isScheduled ? "border-dashed border-slate-200" : "border-slate-50"
 			} bg-white`}
 		>
-			<div className="flex items-center">
+			<div className="flex min-w-0 flex-1 items-center">
 				<div
-					className={`w-10 h-10 rounded-full flex items-center justify-center mr-3 ${finalBgColor} ${finalTextColor} ${isScheduled ? "opacity-50" : ""}`}
+					className={`mr-3 flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${finalBgColor} ${finalTextColor} ${isScheduled ? "opacity-50" : ""}`}
 				>
 					{icon}
 				</div>
-				<div>
-					<div className="flex items-center gap-2">
-						{isScheduled && <Calendar className="w-3.5 h-3.5 text-amber-500" />}
+				<div className="min-w-0 flex-1">
+					<div className="flex min-w-0 items-center gap-2">
+						{isScheduled && (
+							<Calendar className="h-3.5 w-3.5 shrink-0 text-amber-500" />
+						)}
 						<p
-							className={`font-medium ${isScheduled ? "text-slate-400" : "text-slate-800"}`}
+							className={`min-w-0 flex-1 truncate font-medium ${isScheduled ? "text-slate-400" : "text-slate-800"}`}
 						>
 							{transaction.description || category?.name}
 						</p>
 						{isFixedCost && (
-							<span className="bg-slate-100 text-slate-500 text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider">
+							<span className="shrink-0 rounded bg-slate-100 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-slate-500">
 								Fixed
 							</span>
 						)}
 					</div>
-					<div className="flex items-center text-xs text-slate-400 mt-0.5">
-						{customSubtitle
-							? customSubtitle
-							: category && (
-									<span className="bg-slate-100 px-1.5 py-0.5 rounded text-[10px] mr-2 flex items-center">
+					<div className="mt-0.5 flex min-w-0 items-center text-xs text-slate-400">
+						{customSubtitle ? (
+							<div className="min-w-0 truncate">{customSubtitle}</div>
+						) : (
+							category && (
+								<span className="inline-flex min-w-0 max-w-full items-center gap-1 rounded bg-slate-100 px-1.5 py-0.5 text-[10px]">
+									<span className="shrink-0">
 										{renderCategoryIcon(category.icon)}
-										{mainCategory
-											? `${mainCategory.name} • ${category.name}`
-											: category.name}
 									</span>
-								)}
+									<span className="min-w-0 truncate">{category.name}</span>
+								</span>
+							)
+						)}
 					</div>
 				</div>
 			</div>
-			<div className="flex items-center gap-3">
+			<div className="flex shrink-0 items-center gap-3">
 				<span
 					className={`font-mono font-medium ${transaction.type === "income" ? "text-notion-green" : "text-slate-800"} ${isScheduled ? "line-through opacity-50" : ""}`}
 				>

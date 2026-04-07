@@ -11,11 +11,13 @@ export function Layout({ children, activeTab, onTabChange }: LayoutProps) {
 	];
 
 	return (
-		<div className="flex flex-col h-screen bg-slate-50 w-full max-w-md mx-auto shadow-xl overflow-hidden relative">
-			<main className="flex-1 overflow-y-auto p-4 pb-24 pt-6">{children}</main>
+		<div className="mx-auto flex h-dvh max-h-dvh w-full max-w-md flex-col overflow-hidden bg-slate-50 shadow-xl">
+			<main className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain p-4 pt-6">
+				{children}
+			</main>
 
-			<nav className="absolute pb-4 bottom-0 w-full bg-white border-t border-slate-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-20 pb-safe">
-				<div className="flex justify-around items-center h-16">
+			<nav className="z-20 w-full shrink-0 border-t border-slate-200 bg-white pb-[max(0.75rem,env(safe-area-inset-bottom,0px))] shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+				<div className="flex h-16 items-center justify-around">
 					{tabs.map((tab) => {
 						const Icon = tab.icon;
 						const isActive = activeTab === tab.id;
