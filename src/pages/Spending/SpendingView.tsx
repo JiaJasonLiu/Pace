@@ -425,11 +425,6 @@ export function SpendingView({
 													const category = categories.find(
 														(c) => c.name === t.category && c.type === t.type,
 													);
-													const mainCategory = category?.mainCategoryId
-														? categories.find(
-																(c) => c.id === category.mainCategoryId,
-															)
-														: undefined;
 													const isScheduled = t.status === "scheduled";
 
 													return (
@@ -478,7 +473,6 @@ export function SpendingView({
 																<TransactionCard
 																	transaction={t}
 																	category={category}
-																	mainCategory={mainCategory}
 																	currency={currency}
 																	onClick={() => handleOpenEdit(t)}
 																	onAdd={

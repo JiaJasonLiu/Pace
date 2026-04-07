@@ -1,4 +1,5 @@
 import type { Wallet } from "../../types";
+import { applySalaryRecurringSync } from "./applySalaryRecurringSync";
 import type { SetAppState } from "./types";
 
 export function createWalletsActions(setState: SetAppState) {
@@ -10,7 +11,7 @@ export function createWalletsActions(setState: SetAppState) {
 					? wallets.map((w) => ({ ...w, isDefault: false }))
 					: wallets;
 
-			return {
+			const next: typeof prev = {
 				...prev,
 				wallets: [
 					...updatedWallets,
@@ -25,6 +26,7 @@ export function createWalletsActions(setState: SetAppState) {
 					},
 				],
 			};
+			return applySalaryRecurringSync(next);
 		});
 	};
 
@@ -45,18 +47,22 @@ export function createWalletsActions(setState: SetAppState) {
 				);
 			}
 
-			return {
+			const next: typeof prev = {
 				...prev,
 				wallets: updatedWallets,
 			};
+			return applySalaryRecurringSync(next);
 		});
 	};
 
 	const deleteWallet = (id: string) => {
-		setState((prev) => ({
-			...prev,
-			wallets: (prev.wallets || []).filter((w) => w.id !== id),
-		}));
+		setState((prev) => {
+			const next: typeof prev = {
+				...prev,
+				wallets: (prev.wallets || []).filter((w) => w.id !== id),
+			};
+			return applySalaryRecurringSync(next);
+		});
 	};
 
 	return { addWallet, updateWallet, deleteWallet };
