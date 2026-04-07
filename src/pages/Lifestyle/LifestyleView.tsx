@@ -3,13 +3,13 @@ import {
     Heart,
     Info,
     PiggyBank,
-    Plus,
     Settings,
     ShieldCheck,
     Trophy,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useSwipeable } from "react-swipeable";
+import { FloatingAddButton } from "../../components/FloatingAddButton";
 import { formatCurrency } from "../../lib/utils";
 import { useLifestyleData } from "./hooks/useLifestyleData";
 import { useLifestyleNavigation } from "./hooks/useLifestyleNavigation";
@@ -259,17 +259,14 @@ export function LifestyleView({
             </div>
 
             {lifestyleSettings && (
-                <button
-                    type="button"
+                <FloatingAddButton
+                    variant="slate"
                     onClick={() => {
                         setEditingGoal(null);
                         setIsAdding(true);
                     }}
-                    className="fixed bottom-24 right-6 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-slate-900 text-white shadow-lg shadow-slate-900/20 transition-transform hover:bg-slate-800 active:scale-95"
                     aria-label="Add lifestyle goal"
-                >
-                    <Plus className="h-6 w-6" />
-                </button>
+                />
             )}
 
             {/* Modals */}

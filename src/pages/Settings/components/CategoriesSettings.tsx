@@ -1,6 +1,7 @@
 import * as Icons from "lucide-react";
-import { Edit2, Plus } from "lucide-react";
+import { Edit2 } from "lucide-react";
 import { useState } from "react";
+import { FloatingAddButton } from "../../../components/FloatingAddButton";
 import type { Category, TransactionType } from "../../../types";
 import type { CategoriesSettingsProps } from "../types";
 import { CategoryModal } from "./CategoryModal";
@@ -228,12 +229,10 @@ export function CategoriesSettings({
 				</div>
 			</div>
 
-			<button
+			<FloatingAddButton
 				onClick={handleOpenAdd}
-				className="fixed bottom-24 right-6 w-14 h-14 bg-royal text-white rounded-full shadow-lg shadow-royal/30 flex items-center justify-center hover:bg-royal-dark transition-transform active:scale-95 z-30"
-			>
-				<Plus className="w-6 h-6" />
-			</button>
+				aria-label="Add category"
+			/>
 
 			<CategoryModal
 				isOpen={isModalOpen}

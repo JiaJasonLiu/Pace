@@ -5,12 +5,12 @@ import {
 	ArrowUpCircle,
 	ChevronLeft,
 	ChevronRight,
-	Plus,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import type React from "react";
 import { useState } from "react";
 import { useSwipeable } from "react-swipeable";
+import { FloatingAddButton } from "../../components/FloatingAddButton";
 import { TransactionCard } from "../../components/TransactionCard";
 import { TransactionModal } from "../../components/TransactionModal";
 import { formatCurrency } from "../../lib/utils";
@@ -497,14 +497,10 @@ export function SpendingView({
 				</motion.div>
 			</AnimatePresence>
 
-			{/* Floating Action Button */}
-			<button
+			<FloatingAddButton
 				onClick={() => setIsModalOpen(true)}
-				className="fixed bottom-24 right-6 w-14 h-14 bg-royal text-white rounded-full shadow-lg shadow-royal/30 flex items-center justify-center hover:bg-royal-dark transition-transform active:scale-95 z-30"
-				aria-label="Add Transaction"
-			>
-				<Plus className="w-6 h-6" />
-			</button>
+				aria-label="Add transaction"
+			/>
 
 			{/* Transaction Modal */}
 			<AnimatePresence>

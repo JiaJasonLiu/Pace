@@ -5,7 +5,6 @@ import {
 	ChevronDown,
 	ChevronRight,
 	PiggyBank,
-	Plus,
 	Target,
 	Trash2,
 	TrendingUp,
@@ -13,6 +12,7 @@ import {
 } from "lucide-react";
 import { AnimatePresence } from "motion/react";
 import React, { useState } from "react";
+import { FloatingAddButton } from "../../components/FloatingAddButton";
 import { formatCurrency, getCurrencySymbol } from "../../lib/utils";
 import type { Wallet } from "../../types";
 import { WalletModal } from "./components/WalletModal";
@@ -581,12 +581,10 @@ export function WalletsView({
 				})}
 			</div>
 
-			<button
+			<FloatingAddButton
 				onClick={handleOpenAdd}
-				className="fixed bottom-24 right-6 w-14 h-14 bg-royal text-white rounded-full shadow-lg shadow-royal/30 flex items-center justify-center hover:bg-royal-dark transition-transform active:scale-95 z-30"
-			>
-				<Plus className="w-6 h-6" />
-			</button>
+				aria-label="Add wallet"
+			/>
 
 			<AnimatePresence>
 				{isModalOpen && (
