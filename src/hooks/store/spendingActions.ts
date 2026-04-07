@@ -1,3 +1,4 @@
+import { isSameDay, parseISO } from "date-fns";
 import type { RecurringTransaction, Transaction } from "../../types";
 import type { SetAppState } from "./types";
 
@@ -75,9 +76,25 @@ export function createSpendingActions(setState: SetAppState) {
 			const old = prev.transactions.find((t) => t.id === id);
 			if (!old) return prev;
 
+			const recurringTransactions =
+				old.recurringId != null
+					? (prev.recurringTransactions || []).map((r) => {
+							if (r.id !== old.recurringId) return r;
+							const alreadySkipped = r.skippedDates?.some((d) =>
+								isSameDay(parseISO(d), parseISO(old.date)),
+							);
+							if (alreadySkipped) return r;
+							return {
+								...r,
+								skippedDates: [...(r.skippedDates || []), old.date],
+							};
+						})
+					: (prev.recurringTransactions || []);
+
 			const newState = {
 				...prev,
 				transactions: prev.transactions.filter((t) => t.id !== id),
+				recurringTransactions,
 			};
 
 			if (old.walletId && old.status !== "scheduled") {

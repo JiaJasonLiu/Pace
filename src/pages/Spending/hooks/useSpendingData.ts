@@ -10,6 +10,7 @@ import {
 	startOfWeek,
 	endOfWeek,
 } from "date-fns";
+import { encodeScheduledVirtualId } from "../../../lib/recurringOccurrences";
 import type { Transaction, RecurringTransaction } from "../../../types";
 
 export function useSpendingData(
@@ -68,7 +69,7 @@ export function useSpendingData(
 			(isSameDay(checkDate, weekEnd) || isBefore(checkDate, weekEnd))
 		) {
 			scheduledTransactions.push({
-				id: `scheduled-${r.id}-${checkDate.getTime()}`,
+				id: encodeScheduledVirtualId(r.id, checkDate),
 				amount: r.amount,
 				type: r.type,
 				category: r.category,

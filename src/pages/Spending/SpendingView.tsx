@@ -13,6 +13,10 @@ import { useSwipeable } from "react-swipeable";
 import { FloatingAddButton } from "../../components/FloatingAddButton";
 import { TransactionCard } from "../../components/TransactionCard";
 import { TransactionModal } from "../../components/TransactionModal";
+import {
+	findMatchingRecurringForNewTransaction,
+	isVirtualScheduledId,
+} from "../../lib/recurringOccurrences";
 import { formatCurrency } from "../../lib/utils";
 import type { RecurrenceType, Transaction, TransactionType } from "../../types";
 import type { SpendingViewProps } from "./types";
@@ -66,11 +70,14 @@ export function SpendingView({
 
 	const handleDelete = () => {
 		if (editingTransaction) {
-			if (editingTransaction.id.startsWith("scheduled-")) {
-				const withoutPrefix = editingTransaction.id.replace("scheduled-", "");
-				const lastDashIndex = withoutPrefix.lastIndexOf("-");
-				const recurringId = withoutPrefix.substring(0, lastDashIndex);
-				onSkipRecurringDate(recurringId, editingTransaction.date);
+			if (
+				isVirtualScheduledId(editingTransaction.id) &&
+				editingTransaction.recurringId
+			) {
+				onSkipRecurringDate(
+					editingTransaction.recurringId,
+					editingTransaction.date,
+				);
 			} else {
 				onDeleteTransaction(editingTransaction.id);
 			}
@@ -145,9 +152,9 @@ export function SpendingView({
 				}
 			}
 
-			if (editingTransaction.id.startsWith("scheduled-")) {
+			if (isVirtualScheduledId(editingTransaction.id)) {
 				onAddTransaction({
-					id: editingTransaction.id,
+					id: crypto.randomUUID(),
 					date,
 					amount,
 					type,
@@ -174,23 +181,50 @@ export function SpendingView({
 			}
 		} else {
 			const transactionId = crypto.randomUUID();
-			let recurringId;
+			let recurringId: string | undefined;
 
 			if (recurrence !== "none") {
-				recurringId = crypto.randomUUID();
-				onAddRecurringTransaction({
-					id: recurringId,
-					amount,
-					type,
-					category,
-					description,
-					walletId,
-					recurrence: recurrence as RecurrenceType,
-					startDate: date,
-					lastGeneratedDate: date,
-					isActive: true,
-					isFixedCost,
-				});
+				const match = findMatchingRecurringForNewTransaction(
+					recurringTransactions,
+					transactions,
+					{
+						date,
+						recurrence: recurrence as RecurrenceType,
+						category,
+						type,
+						walletId,
+					},
+				);
+
+				if (match) {
+					recurringId = match.id;
+					onUpdateRecurringTransaction({
+						...match,
+						amount,
+						type,
+						category,
+						description,
+						walletId,
+						recurrence: recurrence as RecurrenceType,
+						isActive: true,
+						isFixedCost,
+					});
+				} else {
+					recurringId = crypto.randomUUID();
+					onAddRecurringTransaction({
+						id: recurringId,
+						amount,
+						type,
+						category,
+						description,
+						walletId,
+						recurrence: recurrence as RecurrenceType,
+						startDate: date,
+						lastGeneratedDate: date,
+						isActive: true,
+						isFixedCost,
+					});
+				}
 			}
 
 			onAddTransaction({
@@ -222,15 +256,13 @@ export function SpendingView({
 
 	const handlePostScheduled = (e: React.MouseEvent, t: Transaction) => {
 		e.stopPropagation();
-		if (t.id.startsWith("scheduled-")) {
-			// It's virtual, add it as a real record
+		if (isVirtualScheduledId(t.id)) {
 			onAddTransaction({
 				...t,
-				id: t.id,
+				id: crypto.randomUUID(),
 				status: "posted",
 			});
 		} else {
-			// It's already a real record, just update status
 			onUpdateTransaction({
 				...t,
 				status: "posted",
@@ -455,13 +487,12 @@ export function SpendingView({
 																dragElastic={0.05}
 																onDragEnd={(_, info) => {
 																	if (info.offset.x < -70) {
-																		if (isScheduled) {
-																			// Parse id: scheduled-{recurringId}-{dateISO}
-																			const parts = t.id.split("-");
-																			const recurringId = parts[1];
-																			const date = parts.slice(2).join("-");
-																			onSkipRecurringDate(recurringId, date);
-																		} else {
+																		if (isScheduled && t.recurringId) {
+																			onSkipRecurringDate(
+																				t.recurringId,
+																				t.date,
+																			);
+																		} else if (!isScheduled) {
 																			onDeleteTransaction(t.id);
 																		}
 																	}
