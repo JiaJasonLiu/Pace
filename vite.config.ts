@@ -13,6 +13,7 @@ export default defineConfig(() => {
 				registerType: "autoUpdate",
 				manifest: {
 					name: "Pace",
+					short_name: "Pace",
 					description: "A minimal, mobile-first budget tracker.",
 					theme_color: "#7851A9",
 					background_color: "#F8FAFC",

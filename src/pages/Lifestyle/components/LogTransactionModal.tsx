@@ -53,7 +53,7 @@ export function LogTransactionModal({
 
 		const t = window.setTimeout(() => {
 			amountInputRef.current?.focus();
-		}, 100);
+		}, 350);
 		return () => window.clearTimeout(t);
 	}, [isOpen, initialType]);
 
