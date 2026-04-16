@@ -1,7 +1,7 @@
 import * as Icons from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { RefreshCw, Trash2, Wallet as WalletIcon } from "lucide-react";
-import { useMemo } from "react";
+import { useId, useMemo } from "react";
 import { getCurrencySymbol } from "../lib/utils";
 import type { RecurrenceType } from "../types";
 import { Modal } from "./Modal";
@@ -45,6 +45,8 @@ export function TransactionModal({
 		handleAmountChange,
 		handleSubmit,
 	} = useTransactionForm({ isOpen, onClose, onSave, initialData, categories, wallets });
+
+	const toggleId = useId();
 
 	const walletOptions: SheetSelectOption[] = useMemo(
 		() => [
@@ -248,7 +250,7 @@ export function TransactionModal({
 								<input
 									type="checkbox"
 									name="toggle"
-									id="toggle"
+									id={toggleId}
 									checked={isFixedCost}
 									onChange={(e) => setIsFixedCost(e.target.checked)}
 									className="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer"
@@ -259,7 +261,7 @@ export function TransactionModal({
 									}}
 								/>
 								<label
-									htmlFor="toggle"
+									htmlFor={toggleId}
 									className="toggle-label block overflow-hidden h-5 rounded-full bg-gray-300 cursor-pointer"
 									style={{
 										backgroundColor: isFixedCost ? "#4F46E5" : "#CBD5E1",

@@ -1,5 +1,5 @@
 import { isAfter, parseISO, startOfDay } from "date-fns";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type React from "react";
 import type { RecurrenceType, TransactionType } from "../types";
 import type { TransactionModalProps } from "./types";
@@ -36,8 +36,14 @@ export function useTransactionForm({
 
 	const amountInputRef = useRef<HTMLInputElement>(null);
 
-	const expenseCategories = categories.filter((c) => c.type === "expense");
-	const incomeCategories = categories.filter((c) => c.type === "income");
+	const expenseCategories = useMemo(
+		() => categories.filter((c) => c.type === "expense"),
+		[categories],
+	);
+	const incomeCategories = useMemo(
+		() => categories.filter((c) => c.type === "income"),
+		[categories],
+	);
 
 	const isFutureDate = isAfter(parseISO(date), startOfDay(new Date()));
 
@@ -139,7 +145,6 @@ export function useTransactionForm({
 	};
 
 	return {
-		amount,
 		displayAmount,
 		type,
 		category,
