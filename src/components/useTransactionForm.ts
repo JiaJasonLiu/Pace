@@ -41,11 +41,14 @@ export function useTransactionForm({
 
 	const isFutureDate = isAfter(parseISO(date), startOfDay(new Date()));
 
+	const statusRef = useRef(status);
+	statusRef.current = status;
+
 	useEffect(() => {
-		if (!isFutureDate && status === "scheduled") {
+		if (!isFutureDate && statusRef.current === "scheduled") {
 			setStatus("posted");
 		}
-	}, [isFutureDate, status]);
+	}, [isFutureDate]);
 
 	const formSessionKey = !isOpen
 		? null
@@ -127,7 +130,7 @@ export function useTransactionForm({
 			category,
 			description,
 			date: new Date(date).toISOString(),
-			walletId: walletId || undefined,
+			walletId,
 			recurrence,
 			status,
 			isFixedCost,
