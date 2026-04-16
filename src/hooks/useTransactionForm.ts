@@ -2,7 +2,7 @@ import { isAfter, parseISO, startOfDay } from "date-fns";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type React from "react";
 import type { RecurrenceType, TransactionType } from "../types";
-import type { TransactionModalProps } from "./types";
+import type { TransactionModalProps } from "../components/types";
 
 export function formatAmountWithCommas(value: string): string {
 	const [integer, decimal] = value.split(".");

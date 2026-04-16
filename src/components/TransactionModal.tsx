@@ -7,7 +7,7 @@ import type { RecurrenceType } from "../types";
 import { Modal } from "./Modal";
 import { SheetSelect, type SheetSelectOption } from "./SheetSelect";
 import type { TransactionModalProps } from "./types";
-import { useTransactionForm } from "./useTransactionForm";
+import { useTransactionForm } from "../hooks/useTransactionForm";
 
 export function TransactionModal({
 	isOpen,
