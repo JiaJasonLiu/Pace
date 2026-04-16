@@ -1,25 +1,13 @@
-import { isAfter, parseISO, startOfDay } from "date-fns";
 import * as Icons from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { RefreshCw, Trash2, Wallet as WalletIcon } from "lucide-react";
-import type React from "react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo } from "react";
 import { getCurrencySymbol } from "../lib/utils";
-import type { RecurrenceType, TransactionType } from "../types";
+import type { RecurrenceType } from "../types";
 import { Modal } from "./Modal";
 import { SheetSelect, type SheetSelectOption } from "./SheetSelect";
 import type { TransactionModalProps } from "./types";
-
-function formatAmountWithCommas(value: string): string {
-	const [integer, decimal] = value.split(".");
-	const formattedInteger = (integer ?? "").replace(
-		/\B(?=(\d{3})+(?!\d))/g,
-		",",
-	);
-	return decimal !== undefined
-		? `${formattedInteger}.${decimal}`
-		: formattedInteger;
-}
+import { useTransactionForm } from "./useTransactionForm";
 
 export function TransactionModal({
 	isOpen,
@@ -32,92 +20,31 @@ export function TransactionModal({
 	currency,
 	title,
 }: TransactionModalProps) {
-	const [amount, setAmount] = useState("");
-	const [displayAmount, setDisplayAmount] = useState("");
-	const [type, setType] = useState<TransactionType>("expense");
-	const [category, setCategory] = useState("");
-	const [description, setDescription] = useState("");
-	const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
-	const [walletId, setWalletId] = useState("");
-	const [recurrence, setRecurrence] = useState<RecurrenceType | "none">("none");
-	const [status, setStatus] = useState<"posted" | "scheduled">("posted");
-	const [isFixedCost, setIsFixedCost] = useState(false);
-
-	const amountInputRef = useRef<HTMLInputElement>(null);
-
-	const expenseCategories = categories.filter((c) => c.type === "expense");
-	const incomeCategories = categories.filter((c) => c.type === "income");
-
-	const isFutureDate = isAfter(parseISO(date), startOfDay(new Date()));
-
-	useEffect(() => {
-		if (!isFutureDate && status === "scheduled") {
-			setStatus("posted");
-		}
-	}, [isFutureDate, status]);
-
-	// Reset only when the modal opens (or when switching new ↔ edit), not on every
-	// parent re-render — unstable deps previously cleared the amount while typing.
-	const formSessionKey = !isOpen
-		? null
-		: initialData?.id ?? ("new" as const);
-
-	// biome-ignore lint/correctness/useExhaustiveDependencies: Reset only on open or `formSessionKey` change. Listing categories/wallets/initialData re-runs every parent render and cleared the amount while typing.
-	useEffect(() => {
-		if (!isOpen || formSessionKey === null) return;
-
-		if (initialData) {
-			setAmount(initialData.amount?.toString() || "");
-			setDisplayAmount(
-				formatAmountWithCommas(initialData.amount?.toString() || ""),
-			);
-			setType(initialData.type || "expense");
-			setCategory(
-				initialData.category ||
-					(initialData.type === "income"
-						? incomeCategories[0]?.name
-						: expenseCategories[0]?.name) ||
-					"",
-			);
-			setDescription(initialData.description || "");
-			setDate(
-				initialData.date
-					? initialData.date.split("T")[0]
-					: new Date().toISOString().split("T")[0],
-			);
-			setWalletId(
-				initialData.walletId ||
-					wallets.find((w) => w.isDefault)?.id ||
-					wallets[0]?.id ||
-					"",
-			);
-			setRecurrence(initialData.recurrence || "none");
-			setStatus(initialData.status || "posted");
-			setIsFixedCost(initialData.isFixedCost || false);
-		} else {
-			setAmount("");
-			setDisplayAmount("");
-			setType("expense");
-			setCategory(expenseCategories[0]?.name || "");
-			setDescription("");
-			setDate(new Date().toISOString().split("T")[0]);
-			setWalletId(
-				wallets.find((w) => w.isDefault)?.id || wallets[0]?.id || "",
-			);
-			setRecurrence("none");
-			setStatus("posted");
-			setIsFixedCost(false);
-		}
-
-	}, [isOpen, formSessionKey]);
-
-	const handleTypeChange = (newType: TransactionType) => {
-		setType(newType);
-		const cats = newType === "expense" ? expenseCategories : incomeCategories;
-		if (!cats.find((c) => c.name === category)) {
-			setCategory(cats[0]?.name || "");
-		}
-	};
+	const {
+		displayAmount,
+		type,
+		category,
+		setCategory,
+		description,
+		setDescription,
+		date,
+		setDate,
+		walletId,
+		setWalletId,
+		recurrence,
+		setRecurrence,
+		status,
+		setStatus,
+		isFixedCost,
+		setIsFixedCost,
+		isFutureDate,
+		expenseCategories,
+		incomeCategories,
+		amountInputRef,
+		handleTypeChange,
+		handleAmountChange,
+		handleSubmit,
+	} = useTransactionForm({ isOpen, onClose, onSave, initialData, categories, wallets });
 
 	const walletOptions: SheetSelectOption[] = useMemo(
 		() => [
@@ -128,8 +55,7 @@ export function TransactionModal({
 	);
 
 	const categoryOptions: SheetSelectOption[] = useMemo(() => {
-		const cats =
-			type === "expense" ? expenseCategories : incomeCategories;
+		const cats = type === "expense" ? expenseCategories : incomeCategories;
 		return cats.map((cat) => ({
 			value: cat.name,
 			label:
@@ -151,25 +77,6 @@ export function TransactionModal({
 	const fieldRowClass =
 		"flex h-14 shrink-0 items-center gap-4 border-b border-slate-100 px-4 hover:bg-slate-50 transition-colors";
 	const fieldRowLabelClass = `${fieldRowClass} cursor-pointer`;
-
-	const handleSubmit = (e: React.FormEvent) => {
-		e.preventDefault();
-		if (!amount || Number.isNaN(Number(amount))) return;
-		if (!walletId) return;
-
-		onSave({
-			amount: Number(amount),
-			type,
-			category,
-			description: description,
-			date: new Date(date).toISOString(),
-			walletId: walletId || undefined,
-			recurrence,
-			status,
-			isFixedCost,
-		});
-		onClose();
-	};
 
 	return (
 		<Modal
@@ -212,14 +119,7 @@ export function TransactionModal({
 							// biome-ignore lint/a11y/noAutofocus: intentional — opens keyboard on iOS PWA
 							autoFocus
 							value={displayAmount}
-							onChange={(e) => {
-								const rawValue = e.target.value.replace(/,/g, "");
-								if (!/^\d*\.?\d*$/.test(rawValue)) return;
-								const digitsOnly = rawValue.replace(".", "");
-								if (digitsOnly.length > 12) return;
-								setAmount(rawValue);
-								setDisplayAmount(formatAmountWithCommas(rawValue));
-							}}
+							onChange={(e) => handleAmountChange(e.target.value)}
 							className="bg-transparent text-4xl font-bold text-slate-800 focus:outline-none w-full text-center"
 							required
 						/>
@@ -330,9 +230,7 @@ export function TransactionModal({
 						<RefreshCw className="w-5 h-5 shrink-0 text-slate-400" />
 						<SheetSelect
 							value={recurrence}
-							onChange={(v) =>
-								setRecurrence(v as RecurrenceType | "none")
-							}
+							onChange={(v) => setRecurrence(v as RecurrenceType | "none")}
 							options={recurrenceOptions}
 							placeholder="Recurrence"
 							className="min-w-0 flex-1"
@@ -341,9 +239,7 @@ export function TransactionModal({
 					</div>
 
 					{recurrence !== "none" && type === "expense" && (
-						<label
-							className={`${fieldRowLabelClass} justify-between`}
-						>
+						<label className={`${fieldRowLabelClass} justify-between`}>
 							<div className="flex min-w-0 items-center gap-4">
 								<Icons.Lock className="h-5 w-5 shrink-0 text-slate-400" />
 								<span className="text-sm text-slate-700">Fixed Cost</span>
@@ -369,7 +265,7 @@ export function TransactionModal({
 										backgroundColor: isFixedCost ? "#4F46E5" : "#CBD5E1",
 										transition: "all 0.2s ease",
 									}}
-								></label>
+								/>
 							</div>
 						</label>
 					)}
