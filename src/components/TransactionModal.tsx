@@ -109,10 +109,6 @@ export function TransactionModal({
 			setIsFixedCost(false);
 		}
 
-		const t = window.setTimeout(() => {
-			amountInputRef.current?.focus();
-		}, 350);
-		return () => window.clearTimeout(t);
 	}, [isOpen, formSessionKey]);
 
 	const handleTypeChange = (newType: TransactionType) => {
@@ -213,6 +209,8 @@ export function TransactionModal({
 							type="text"
 							inputMode="decimal"
 							placeholder="0.00"
+							// biome-ignore lint/a11y/noAutofocus: intentional — opens keyboard on iOS PWA
+							autoFocus
 							value={displayAmount}
 							onChange={(e) => {
 								const rawValue = e.target.value.replace(/,/g, "");
