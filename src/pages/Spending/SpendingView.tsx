@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import type React from "react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useSwipeable } from "react-swipeable";
 import { FloatingAddButton } from "../../components/FloatingAddButton";
 import { TransactionCard } from "../../components/TransactionCard";
@@ -40,6 +40,7 @@ export function SpendingView({
 	const [direction, setDirection] = useState(0);
 	const [isModalOpen, setIsModalOpen] = useState(false);
 	const [isSwipingCard, setIsSwipingCard] = useState(false);
+	const dragOccurred = useRef(false);
 	const [editingTransaction, setEditingTransaction] =
 		useState<Transaction | null>(null);
 
@@ -497,6 +498,9 @@ export function SpendingView({
 																onDragStart={() => setIsSwipingCard(true)}
 																onDragEnd={(_, info) => {
 																	setIsSwipingCard(false);
+																	if (Math.abs(info.offset.x) > 5) {
+																		dragOccurred.current = true;
+																	}
 																	if (info.offset.x < -70) {
 																		if (isScheduled && t.recurringId) {
 																			onSkipRecurringDate(
@@ -506,6 +510,12 @@ export function SpendingView({
 																		} else if (!isScheduled) {
 																			onDeleteTransaction(t.id);
 																		}
+																	}
+																}}
+																onClick={(e) => {
+																	if (dragOccurred.current) {
+																		e.stopPropagation();
+																		dragOccurred.current = false;
 																	}
 																}}
 																onTouchStart={(e) => e.stopPropagation()}
