@@ -82,6 +82,8 @@ export default function App() {
 						onDeleteRecurringTransaction={store.deleteRecurringTransaction}
 						onImport={store.importData}
 						onClear={store.clearData}
+						motivationalEarning={store.state.motivationalEarning}
+						onUpdateMotivationalEarning={store.updateMotivationalEarning}
 					/>
 				);
 			default:

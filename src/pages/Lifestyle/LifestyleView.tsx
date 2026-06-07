@@ -236,8 +236,6 @@ export function LifestyleView({
                 currency={currency}
                 defaultWallet={defaultWallet}
                 lifestyleSettings={lifestyleSettings}
-                motivationalEarning={motivationalEarning}
-                onUpdateMotivationalEarning={onUpdateMotivationalEarning}
             />
         </div>
     );

@@ -4,6 +4,7 @@ import {
 	Database,
 	RefreshCw,
 	Settings,
+	Target,
 	User,
 } from "lucide-react";
 import { AccountSettings } from "./components/AccountSettings";
@@ -12,6 +13,7 @@ import { DataSettings } from "./components/DataSettings";
 import { RecurringSettings } from "./components/RecurringSettings";
 import { useSettingsNavigation } from "./hooks/useSettingsNavigation";
 import type { SettingsViewProps } from "./types";
+import { MotivationalEarningSection } from "../Lifestyle/components/MotivationalEarningSection";
 
 export function SettingsView({
 	state,
@@ -23,18 +25,24 @@ export function SettingsView({
 	onDeleteRecurringTransaction,
 	onImport,
 	onClear,
+	motivationalEarning,
+	onUpdateMotivationalEarning,
 }: SettingsViewProps) {
 	const { activePage, navigateTo } = useSettingsNavigation();
+
+	const backButton = (
+		<button
+			onClick={() => navigateTo("main")}
+			className="flex items-center text-slate-500 hover:text-slate-800 transition-colors mb-4"
+		>
+			<ArrowLeft className="w-5 h-5 mr-1" /> Back to Settings
+		</button>
+	);
 
 	if (activePage === "categories") {
 		return (
 			<div className="space-y-4">
-				<button
-					onClick={() => navigateTo("main")}
-					className="flex items-center text-slate-500 hover:text-slate-800 transition-colors mb-4"
-				>
-					<ArrowLeft className="w-5 h-5 mr-1" /> Back to Settings
-				</button>
+				{backButton}
 				<CategoriesSettings
 					categories={state.categories}
 					onAddCategory={onAddCategory}
@@ -48,12 +56,7 @@ export function SettingsView({
 	if (activePage === "account") {
 		return (
 			<div className="space-y-4">
-				<button
-					onClick={() => navigateTo("main")}
-					className="flex items-center text-slate-500 hover:text-slate-800 transition-colors mb-4"
-				>
-					<ArrowLeft className="w-5 h-5 mr-1" /> Back to Settings
-				</button>
+				{backButton}
 				<AccountSettings
 					currency={state.currency}
 					onSetCurrency={onSetCurrency}
@@ -66,12 +69,7 @@ export function SettingsView({
 	if (activePage === "data") {
 		return (
 			<div className="space-y-4">
-				<button
-					onClick={() => navigateTo("main")}
-					className="flex items-center text-slate-500 hover:text-slate-800 transition-colors mb-4"
-				>
-					<ArrowLeft className="w-5 h-5 mr-1" /> Back to Settings
-				</button>
+				{backButton}
 				<DataSettings state={state} onImport={onImport} />
 			</div>
 		);
@@ -80,12 +78,7 @@ export function SettingsView({
 	if (activePage === "recurring") {
 		return (
 			<div className="space-y-4">
-				<button
-					onClick={() => navigateTo("main")}
-					className="flex items-center text-slate-500 hover:text-slate-800 transition-colors mb-4"
-				>
-					<ArrowLeft className="w-5 h-5 mr-1" /> Back to Settings
-				</button>
+				{backButton}
 				<RecurringSettings
 					recurringTransactions={state.recurringTransactions || []}
 					categories={state.categories}
@@ -93,6 +86,19 @@ export function SettingsView({
 					currency={state.currency}
 					onUpdate={onUpdateRecurringTransaction}
 					onDelete={onDeleteRecurringTransaction}
+				/>
+			</div>
+		);
+	}
+
+	if (activePage === "motivational") {
+		return (
+			<div className="space-y-4">
+				{backButton}
+				<MotivationalEarningSection
+					motivationalEarning={motivationalEarning}
+					currency={state.currency}
+					onUpdate={onUpdateMotivationalEarning}
 				/>
 			</div>
 		);
@@ -158,6 +164,24 @@ export function SettingsView({
 							</h3>
 							<p className="text-xs text-slate-500">
 								Manage your automated transactions
+							</p>
+						</div>
+					</div>
+					<ChevronRight className="w-5 h-5 text-slate-400" />
+				</button>
+
+				<button
+					onClick={() => navigateTo("motivational")}
+					className="w-full bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between hover:bg-slate-50 transition-colors"
+				>
+					<div className="flex items-center">
+						<div className="w-10 h-10 bg-royal/10 text-royal rounded-full flex items-center justify-center mr-4">
+							<Target className="w-5 h-5" />
+						</div>
+						<div className="text-left">
+							<h3 className="font-medium text-slate-800">Motivational Earning</h3>
+							<p className="text-xs text-slate-500">
+								Define your dream lifestyle and income target
 							</p>
 						</div>
 					</div>

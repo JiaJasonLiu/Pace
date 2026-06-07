@@ -1,6 +1,7 @@
 import type {
 	AppState,
 	Category,
+	MotivationalEarning,
 	RecurringTransaction,
 	Wallet,
 } from "../../../types";
@@ -15,6 +16,8 @@ export interface SettingsViewProps {
 	onDeleteRecurringTransaction: (id: string) => void;
 	onImport: (data: Partial<AppState>) => void;
 	onClear: () => void;
+	motivationalEarning?: MotivationalEarning;
+	onUpdateMotivationalEarning: (data: MotivationalEarning) => void;
 }
 
 export interface CategoryModalProps {
