@@ -121,12 +121,12 @@ export function Modal({
 			onTouchStart={stopTouchBubble}
 			onTouchMove={stopTouchBubble}
 			onTouchEnd={stopTouchBubble}
-			className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/40 backdrop-blur-sm overscroll-none" style={{ height: "100dvh" }}
+			className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/40 backdrop-blur-sm overscroll-none" style={{ height: "100svh" }}
 		>
 			<div className="fixed inset-0" onClick={onClose} />
 			<motion.div
 				ref={sheetRef}
-				style={{ y, height: "95dvh" }}
+				style={{ y, height: "95svh", maxHeight: "95svh" }}
 				initial={{ y: "100%" }}
 				animate={{ y: 0 }}
 				exit={{ y: "100%" }}
