@@ -465,8 +465,6 @@ export function SpendingView({
 													const category = categories.find(
 														(c) => c.name === t.category && c.type === t.type,
 													);
-													const isScheduled = t.status === "scheduled";
-
 													return (
 														<motion.div
 															key={t.id}
