@@ -1,4 +1,4 @@
-import { addWeeks, format, parseISO, subWeeks } from "date-fns";
+import { addWeeks, format, isToday, isTomorrow, isYesterday, parseISO, subWeeks } from "date-fns";
 import * as Icons from "lucide-react";
 import {
 	ArrowDownCircle,
@@ -39,6 +39,7 @@ export function SpendingView({
 	const [currentDate, setCurrentDate] = useState(new Date());
 	const [direction, setDirection] = useState(0);
 	const [isModalOpen, setIsModalOpen] = useState(false);
+	const [isSwipingCard, setIsSwipingCard] = useState(false);
 	const [editingTransaction, setEditingTransaction] =
 		useState<Transaction | null>(null);
 
@@ -331,7 +332,7 @@ export function SpendingView({
 				onSwipedLeft: handleNextWeek,
 				onSwipedRight: handlePrevWeek,
 				trackMouse: true,
-				trackTouch: !isModalOpen,
+				trackTouch: !isModalOpen && !isSwipingCard,
 			})}
 		>
 			<div className="flex items-center justify-between mb-4 bg-white p-2 rounded-2xl shadow-sm border border-slate-100">
@@ -424,7 +425,15 @@ export function SpendingView({
 							sortedDays.map((day) => (
 								<div key={day} className="space-y-3">
 									<h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider ml-1 flex justify-between items-center">
-										<span>{format(parseISO(day), "EEEE MMM d")}</span>
+										<span>
+											{(() => {
+												const d = parseISO(day);
+												if (isToday(d)) return "Today";
+												if (isYesterday(d)) return "Yesterday";
+												if (isTomorrow(d)) return "Tomorrow";
+												return format(d, "EEEE MMM d");
+											})()}
+										</span>
 										<span>
 											{groupedTransactions[day]
 												.filter((t) => t.status !== "scheduled")
@@ -471,8 +480,8 @@ export function SpendingView({
 														>
 															{/* Delete background action - only for non-scheduled */}
 															{!isScheduled && (
-																<div className="absolute inset-0 bg-slate-100 flex items-center justify-end pr-6 rounded-xl">
-																	<div className="flex flex-col items-center text-slate-400">
+																<div className="absolute inset-0 bg-red-500 flex items-center justify-end pr-6 rounded-xl">
+																	<div className="flex flex-col items-center text-white">
 																		<Icons.Trash2 className="w-5 h-5 mb-1" />
 																		<span className="text-[10px] font-bold uppercase tracking-tighter">
 																			Delete
@@ -485,7 +494,9 @@ export function SpendingView({
 																drag={isScheduled ? false : "x"}
 																dragConstraints={{ left: -100, right: 0 }}
 																dragElastic={0.05}
+																onDragStart={() => setIsSwipingCard(true)}
 																onDragEnd={(_, info) => {
+																	setIsSwipingCard(false);
 																	if (info.offset.x < -70) {
 																		if (isScheduled && t.recurringId) {
 																			onSkipRecurringDate(
