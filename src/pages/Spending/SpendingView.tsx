@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import type React from "react";
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { useSwipeable } from "react-swipeable";
 import { FloatingAddButton } from "../../components/FloatingAddButton";
 import { TransactionCard } from "../../components/TransactionCard";
@@ -39,8 +39,6 @@ export function SpendingView({
 	const [currentDate, setCurrentDate] = useState(new Date());
 	const [direction, setDirection] = useState(0);
 	const [isModalOpen, setIsModalOpen] = useState(false);
-	const [isSwipingCard, setIsSwipingCard] = useState(false);
-	const dragOccurred = useRef(false);
 	const [editingTransaction, setEditingTransaction] =
 		useState<Transaction | null>(null);
 
@@ -333,7 +331,7 @@ export function SpendingView({
 				onSwipedLeft: handleNextWeek,
 				onSwipedRight: handlePrevWeek,
 				trackMouse: true,
-				trackTouch: !isModalOpen && !isSwipingCard,
+				trackTouch: !isModalOpen,
 			})}
 		>
 			<div className="flex items-center justify-between mb-4 bg-white p-2 rounded-2xl shadow-sm border border-slate-100">
@@ -477,66 +475,21 @@ export function SpendingView({
 															animate={{ opacity: 1, height: "auto" }}
 															exit={{ opacity: 0, x: -100, height: 0 }}
 															transition={{ duration: 0.2 }}
-															className="relative overflow-hidden rounded-xl group swipe-card-container"
 														>
-															{/* Delete background action - only for non-scheduled */}
-															{!isScheduled && (
-																<div className="absolute inset-0 bg-red-500 flex items-center justify-end pr-6 rounded-xl">
-																	<div className="flex flex-col items-center text-white">
-																		<Icons.Trash2 className="w-5 h-5 mb-1" />
-																		<span className="text-[10px] font-bold uppercase tracking-tighter">
-																			Delete
-																		</span>
-																	</div>
-																</div>
-															)}
-
-															<motion.div
-																drag={isScheduled ? false : "x"}
-																dragConstraints={{ left: -100, right: 0 }}
-																dragElastic={0.05}
-																onDragStart={() => setIsSwipingCard(true)}
-																onDragEnd={(_, info) => {
-																	setIsSwipingCard(false);
-																	if (Math.abs(info.offset.x) > 5) {
-																		dragOccurred.current = true;
-																	}
-																	if (info.offset.x < -70) {
-																		if (isScheduled && t.recurringId) {
-																			onSkipRecurringDate(
-																				t.recurringId,
-																				t.date,
-																			);
-																		} else if (!isScheduled) {
-																			onDeleteTransaction(t.id);
-																		}
-																	}
-																}}
-																onTouchStart={(e) => e.stopPropagation()}
-																onTouchMove={(e) => e.stopPropagation()}
-																className="relative z-10 bg-white rounded-xl"
-															>
-																<TransactionCard
-																	transaction={t}
-																	category={category}
-																	currency={currency}
-																	onClick={() => {
-																		if (dragOccurred.current) {
-																			dragOccurred.current = false;
-																			return;
-																		}
-																		handleOpenEdit(t);
-																	}}
-																	onAdd={
-																		t.status === "scheduled"
-																			? (e) => handlePostScheduled(e, t)
-																			: undefined
-																	}
-																	icon={renderCategoryIcon(t.category, t.type)}
-																	showLifestyleType={true}
-																	isFixedCost={t.isFixedCost}
-																/>
-															</motion.div>
+															<TransactionCard
+																transaction={t}
+																category={category}
+																currency={currency}
+																onClick={() => handleOpenEdit(t)}
+																onAdd={
+																	t.status === "scheduled"
+																		? (e) => handlePostScheduled(e, t)
+																		: undefined
+																}
+																icon={renderCategoryIcon(t.category, t.type)}
+																showLifestyleType={true}
+																isFixedCost={t.isFixedCost}
+															/>
 														</motion.div>
 													);
 												})}
