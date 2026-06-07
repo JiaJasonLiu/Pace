@@ -29,12 +29,10 @@ export function LifestyleView({
     categories,
     currency,
     lifestyleSettings,
-    motivationalEarning,
     onAddGoal,
     onUpdateGoal,
     onDeleteGoal,
     onUpdateLifestyleSettings,
-    onUpdateMotivationalEarning,
     onAddTransaction,
 }: LifestyleViewProps) {
     const {
