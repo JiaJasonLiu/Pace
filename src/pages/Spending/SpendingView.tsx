@@ -512,12 +512,6 @@ export function SpendingView({
 																		}
 																	}
 																}}
-																onClickCapture={(e) => {
-																	if (dragOccurred.current) {
-																		e.stopPropagation();
-																		dragOccurred.current = false;
-																	}
-																}}
 																onTouchStart={(e) => e.stopPropagation()}
 																onTouchMove={(e) => e.stopPropagation()}
 																className="relative z-10 bg-white rounded-xl"
@@ -526,7 +520,13 @@ export function SpendingView({
 																	transaction={t}
 																	category={category}
 																	currency={currency}
-																	onClick={() => handleOpenEdit(t)}
+																	onClick={() => {
+																		if (dragOccurred.current) {
+																			dragOccurred.current = false;
+																			return;
+																		}
+																		handleOpenEdit(t);
+																	}}
 																	onAdd={
 																		t.status === "scheduled"
 																			? (e) => handlePostScheduled(e, t)
