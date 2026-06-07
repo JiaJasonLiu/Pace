@@ -131,11 +131,12 @@ export function LifestyleSettingsModal({
 								Monthly Budget Amount
 							</label>
 							<div className="relative">
-								<span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-lg font-medium">
+								<span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-lg font-medium select-none">
 									{getCurrencySymbol(currency)}
 								</span>
 								<input
-									type="number"
+									type="text"
+									inputMode="decimal"
 									placeholder="0.00"
 									value={customIncomeAmount}
 									onChange={(e) => setCustomIncomeAmount(e.target.value)}

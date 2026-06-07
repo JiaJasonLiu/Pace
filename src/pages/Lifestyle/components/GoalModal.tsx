@@ -1,6 +1,6 @@
 import * as Icons from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { AlignLeft, PiggyBank } from "lucide-react";
+import { AlignLeft } from "lucide-react";
 import type React from "react";
 import { useEffect, useMemo, useState } from "react";
 import { Modal } from "../../../components/Modal";
@@ -15,21 +15,20 @@ export function GoalModal({
 	onUpdateGoal,
 	editingGoal,
 	currency,
-	wallets,
 	selectedCategory,
 	categories,
 }: GoalModalProps) {
-	// Goal form state
 	const [title, setTitle] = useState("");
 	const [targetAmount, setTargetAmount] = useState("");
-	const [currentAmount, setCurrentAmount] = useState("");
 	const [description, setDescription] = useState("");
 	const [category, setCategory] = useState<"need" | "want" | "savings">("need");
 
 	const filteredCategories = useMemo(
 		() =>
 			categories.filter(
-				(c) => c.lifestyleType === category && c.type === "expense",
+				(c) =>
+					c.lifestyleType === category &&
+					(category === "savings" ? c.type === "income" : c.type === "expense"),
 			),
 		[categories, category],
 	);
@@ -38,10 +37,7 @@ export function GoalModal({
 		() =>
 			filteredCategories.map((cat) => ({
 				value: cat.name,
-				label:
-					cat.lifestyleType && cat.lifestyleType !== "none"
-						? `(${cat.lifestyleType.charAt(0).toUpperCase() + cat.lifestyleType.slice(1)}) ${cat.name}`
-						: cat.name,
+				label: cat.name,
 			})),
 		[filteredCategories],
 	);
@@ -53,7 +49,6 @@ export function GoalModal({
 		if (editingGoal) {
 			setTitle(editingGoal.title);
 			setTargetAmount(editingGoal.targetAmount.toString());
-			setCurrentAmount(editingGoal.currentAmount?.toString() || "");
 			setDescription(editingGoal.description);
 			setCategory(editingGoal.category);
 		} else {
@@ -61,39 +56,26 @@ export function GoalModal({
 			setCategory(initialCategory);
 
 			const initialFilteredCats = categories.filter(
-				(c) => c.lifestyleType === initialCategory && c.type === "expense",
+				(c) =>
+					c.lifestyleType === initialCategory &&
+					(initialCategory === "savings"
+						? c.type === "income"
+						: c.type === "expense"),
 			);
 			setTitle(initialFilteredCats[0]?.name || "");
-
 			setTargetAmount("");
 			setDescription("");
-
-			if (initialCategory === "savings") {
-				const savingsBalance = wallets
-					.filter((w) => w.type === "savings")
-					.reduce((acc, w) => acc + w.balance, 0);
-				setCurrentAmount(savingsBalance.toString());
-			} else {
-				setCurrentAmount("");
-			}
 		}
-	}, [editingGoal, wallets, selectedCategory, categories]);
+	}, [editingGoal, selectedCategory, categories]);
 
 	const handleCategoryTypeChange = (cat: "need" | "want" | "savings") => {
 		setCategory(cat);
 		const newFilteredCats = categories.filter(
-			(c) => c.lifestyleType === cat && c.type === "expense",
+			(c) =>
+				c.lifestyleType === cat &&
+				(cat === "savings" ? c.type === "income" : c.type === "expense"),
 		);
 		setTitle(newFilteredCats[0]?.name || "");
-
-		if (cat === "savings" && !editingGoal) {
-			const savingsBalance = wallets
-				.filter((w) => w.type === "savings")
-				.reduce((acc, w) => acc + w.balance, 0);
-			setCurrentAmount(savingsBalance.toString());
-		} else if (!editingGoal) {
-			setCurrentAmount("");
-		}
 	};
 
 	const handleSubmit = (e: React.FormEvent) => {
@@ -103,21 +85,15 @@ export function GoalModal({
 		const goalData = {
 			title,
 			targetAmount: Number(targetAmount),
-			currentAmount: currentAmount ? Number(currentAmount) : 0,
+			currentAmount: 0,
 			description,
 			category,
 		};
 
 		if (editingGoal) {
-			onUpdateGoal({
-				...editingGoal,
-				...goalData,
-			});
+			onUpdateGoal({ ...editingGoal, ...goalData });
 		} else {
-			onAddGoal({
-				id: crypto.randomUUID(),
-				...goalData,
-			});
+			onAddGoal({ id: crypto.randomUUID(), ...goalData });
 		}
 
 		onClose();
@@ -143,21 +119,20 @@ export function GoalModal({
 				onSubmit={handleSubmit}
 				className="space-y-3"
 			>
-				<div className="flex justify-center py-2 overflow-x-auto">
-					<div className="flex items-center justify-center w-full">
-						<span className="text-slate-400 text-xl font-medium mr-1">
-							{getCurrencySymbol(currency)}
-						</span>
-						<input
-							type="number"
-							step="0.01"
-							placeholder="0.00"
-							value={targetAmount}
-							onChange={(e) => setTargetAmount(e.target.value)}
-							className="bg-transparent text-4xl font-bold text-slate-800 focus:outline-none w-full text-center"
-							required
-						/>
-					</div>
+				<div className="flex items-baseline justify-center gap-0.5 py-2">
+					<span className="text-4xl font-bold text-slate-800 select-none">
+						{getCurrencySymbol(currency)}
+					</span>
+					<input
+						type="text"
+						inputMode="decimal"
+						placeholder="0.00"
+						value={targetAmount}
+						onChange={(e) => setTargetAmount(e.target.value)}
+						style={{ fieldSizing: "content" } as React.CSSProperties}
+						className="bg-transparent text-4xl font-bold text-slate-800 focus:outline-none min-w-[3ch]"
+						required
+					/>
 				</div>
 				<p className="text-center text-xs text-slate-400 font-medium -mt-2 mb-4">
 					Monthly Target
@@ -203,20 +178,6 @@ export function GoalModal({
 						/>
 					</div>
 
-					{category === "savings" && (
-						<label className="flex items-center gap-4 p-4 border-b border-slate-100 cursor-pointer hover:bg-slate-50 transition-colors">
-							<PiggyBank className="w-5 h-5 text-slate-400" />
-							<input
-								type="number"
-								step="0.01"
-								placeholder="Current Savings (Optional)"
-								value={currentAmount}
-								onChange={(e) => setCurrentAmount(e.target.value)}
-								className="flex-1 bg-transparent focus:outline-none text-slate-700 text-sm placeholder:text-slate-400"
-							/>
-						</label>
-					)}
-
 					<label className="flex items-center gap-4 p-4 border-b border-slate-100 cursor-pointer hover:bg-slate-50 transition-colors">
 						<AlignLeft className="w-5 h-5 text-slate-400" />
 						<input
@@ -224,7 +185,7 @@ export function GoalModal({
 							placeholder="Motivation / Description"
 							value={description}
 							onChange={(e) => setDescription(e.target.value)}
-							className="flex-1 bg-transparent focus:outline-none text-slate-700 text-sm placeholder:text-slate-400"
+							className="flex-1 bg-transparent focus:outline-none text-slate-700 text-sm placeholder:text-slate-400 truncate"
 						/>
 					</label>
 				</div>
