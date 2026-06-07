@@ -512,7 +512,7 @@ export function SpendingView({
 																		}
 																	}
 																}}
-																onClick={(e) => {
+																onClickCapture={(e) => {
 																	if (dragOccurred.current) {
 																		e.stopPropagation();
 																		dragOccurred.current = false;
