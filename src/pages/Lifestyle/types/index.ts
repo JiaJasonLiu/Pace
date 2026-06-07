@@ -50,6 +50,8 @@ export interface LifestyleSettingsModalProps {
 	onUpdateLifestyleSettings: (settings: LifestyleSettings) => void;
 	currency: string;
 	defaultWallet?: Wallet;
+	motivationalEarning?: MotivationalEarning;
+	onUpdateMotivationalEarning: (data: MotivationalEarning) => void;
 }
 
 export interface LogTransactionModalProps {
