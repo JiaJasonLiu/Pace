@@ -56,11 +56,6 @@ export const TransactionCard: React.FC<TransactionCardProps> = (props) => {
 						>
 							{transaction.description || category?.name}
 						</p>
-						{isFixedCost && (
-							<span className="shrink-0 rounded bg-slate-100 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-slate-500">
-								Fixed
-							</span>
-						)}
 					</div>
 					<div className="mt-0.5 flex min-w-0 items-center text-xs text-slate-400">
 						{customSubtitle ? (
@@ -78,7 +73,12 @@ export const TransactionCard: React.FC<TransactionCardProps> = (props) => {
 					</div>
 				</div>
 			</div>
-			<div className="flex shrink-0 items-center gap-3">
+			<div className="flex shrink-0 items-center gap-2">
+				{isFixedCost && (
+					<span className="shrink-0 rounded bg-slate-100 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-slate-500">
+						Fixed
+					</span>
+				)}
 				<span
 					className={`font-mono font-medium ${transaction.type === "income" ? "text-notion-green" : "text-slate-800"} ${isScheduled ? "line-through opacity-50" : ""}`}
 				>

@@ -1,4 +1,4 @@
-import { addWeeks, format, parseISO, subWeeks } from "date-fns";
+import { addWeeks, format, isToday, isTomorrow, isYesterday, parseISO, subWeeks } from "date-fns";
 import * as Icons from "lucide-react";
 import {
 	ArrowDownCircle,
@@ -424,7 +424,15 @@ export function SpendingView({
 							sortedDays.map((day) => (
 								<div key={day} className="space-y-3">
 									<h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider ml-1 flex justify-between items-center">
-										<span>{format(parseISO(day), "EEEE MMM d")}</span>
+										<span>
+											{(() => {
+												const d = parseISO(day);
+												if (isToday(d)) return "Today";
+												if (isYesterday(d)) return "Yesterday";
+												if (isTomorrow(d)) return "Tomorrow";
+												return format(d, "EEEE MMM d");
+											})()}
+										</span>
 										<span>
 											{groupedTransactions[day]
 												.filter((t) => t.status !== "scheduled")
@@ -457,8 +465,6 @@ export function SpendingView({
 													const category = categories.find(
 														(c) => c.name === t.category && c.type === t.type,
 													);
-													const isScheduled = t.status === "scheduled";
-
 													return (
 														<motion.div
 															key={t.id}
@@ -467,55 +473,21 @@ export function SpendingView({
 															animate={{ opacity: 1, height: "auto" }}
 															exit={{ opacity: 0, x: -100, height: 0 }}
 															transition={{ duration: 0.2 }}
-															className="relative overflow-hidden rounded-xl group swipe-card-container"
 														>
-															{/* Delete background action - only for non-scheduled */}
-															{!isScheduled && (
-																<div className="absolute inset-0 bg-slate-100 flex items-center justify-end pr-6 rounded-xl">
-																	<div className="flex flex-col items-center text-slate-400">
-																		<Icons.Trash2 className="w-5 h-5 mb-1" />
-																		<span className="text-[10px] font-bold uppercase tracking-tighter">
-																			Delete
-																		</span>
-																	</div>
-																</div>
-															)}
-
-															<motion.div
-																drag={isScheduled ? false : "x"}
-																dragConstraints={{ left: -100, right: 0 }}
-																dragElastic={0.05}
-																onDragEnd={(_, info) => {
-																	if (info.offset.x < -70) {
-																		if (isScheduled && t.recurringId) {
-																			onSkipRecurringDate(
-																				t.recurringId,
-																				t.date,
-																			);
-																		} else if (!isScheduled) {
-																			onDeleteTransaction(t.id);
-																		}
-																	}
-																}}
-																onTouchStart={(e) => e.stopPropagation()}
-																onTouchMove={(e) => e.stopPropagation()}
-																className="relative z-10 bg-white rounded-xl"
-															>
-																<TransactionCard
-																	transaction={t}
-																	category={category}
-																	currency={currency}
-																	onClick={() => handleOpenEdit(t)}
-																	onAdd={
-																		t.status === "scheduled"
-																			? (e) => handlePostScheduled(e, t)
-																			: undefined
-																	}
-																	icon={renderCategoryIcon(t.category, t.type)}
-																	showLifestyleType={true}
-																	isFixedCost={t.isFixedCost}
-																/>
-															</motion.div>
+															<TransactionCard
+																transaction={t}
+																category={category}
+																currency={currency}
+																onClick={() => handleOpenEdit(t)}
+																onAdd={
+																	t.status === "scheduled"
+																		? (e) => handlePostScheduled(e, t)
+																		: undefined
+																}
+																icon={renderCategoryIcon(t.category, t.type)}
+																showLifestyleType={true}
+																isFixedCost={t.isFixedCost}
+															/>
 														</motion.div>
 													);
 												})}
